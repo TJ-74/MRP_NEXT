@@ -96,7 +96,7 @@
         "transform": "lodash/{{member}}"
       }
     },
-    "outputFileTracingRoot": "C:\\Users\\74run\\my-next-app\\MRP_NEXT",
+    "outputFileTracingRoot": "C:\\Users\\74run\\my-next-app",
     "experimental": {
       "nodeMiddleware": false,
       "cacheLife": {
@@ -174,7 +174,7 @@
       "forceSwcTransforms": false,
       "largePageDataBytes": 128000,
       "turbo": {
-        "root": "C:\\Users\\74run\\my-next-app\\MRP_NEXT"
+        "root": "C:\\Users\\74run\\my-next-app"
       },
       "typedRoutes": false,
       "typedEnv": false,
@@ -280,7 +280,7 @@
     "bundlePagesRouterDependencies": false,
     "configFileName": "next.config.mjs"
   },
-  "appDir": "C:\\Users\\74run\\my-next-app\\MRP_NEXT",
+  "appDir": "C:\\Users\\74run\\my-next-app",
   "relativeAppDir": "",
   "files": [
     ".next\\routes-manifest.json",
@@ -302,6 +302,6 @@
     ".next\\server\\next-font-manifest.json"
   ],
   "ignore": [
-    "node_modules\\next\\dist\\compiled\\@ampproject\\toolbox-optimizer\\**\\*"
+    "node_modules\\.pnpm\\next@15.2.1_react-dom@19.0.0_react@19.0.0__react@19.0.0\\node_modules\\next\\dist\\compiled\\@ampproject\\toolbox-optimizer\\**\\*"
   ]
 }

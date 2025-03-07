@@ -1,4 +1,4 @@
-// File: C:\Users\74run\my-next-app\MRP_NEXT\src\app\api\chat\route.ts
+// File: C:\Users\74run\my-next-app\src\app\api\chat\route.ts
 import * as entry from '../../../../../src/app/api/chat/route.js'
 import type { NextRequest } from 'next/server.js'
 
