@@ -47,26 +47,11 @@ const SignIn = () => {
   const handleEmailSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      setIsLoading(true);
-      if (!email || !password) {
-        throw new Error('Please enter both email and password');
-      }
       await signInWithEmailAndPassword(auth, email, password);
       router.push('/');
-    } catch (error: any) {
-      console.error('Error signing in with email/password:', error);
-      // Handle specific Firebase auth errors
-      if (error.code === 'auth/user-not-found') {
-        alert('No user found with this email');
-      } else if (error.code === 'auth/wrong-password') {
-        alert('Invalid password');
-      } else if (error.code === 'auth/invalid-email') {     
-        alert('Invalid email format');
-      } else {
-        alert(error.message || 'Failed to sign in');
-      }
-    } finally {
-      setIsLoading(false);
+    } catch (error) {
+      console.error('Error signing in with email:', error);
+      alert('Failed to sign in with email. Please try again.');
     }
   };
   
@@ -169,7 +154,7 @@ const SignIn = () => {
             </form>
 
             <div className="text-center text-gray-400">
-              <span>Don't have an account? </span>
+              <span>Don&apos;t have an account? </span>
               <Link href="/signup" className="text-blue-500 hover:text-blue-400">
                 Sign up
               </Link>

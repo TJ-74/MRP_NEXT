@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Menu, X, User, MessageCircle, LogOut, Search } from 'lucide-react';
+import { Menu, X, User, LogOut} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { auth } from '@/config/firebase';
 import { signOut } from 'firebase/auth';

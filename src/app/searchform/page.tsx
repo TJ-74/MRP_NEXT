@@ -21,17 +21,7 @@ interface SearchFormData {
   procedure: string;
 }
 
-interface Organization {
-  id: string;
-  name: string;
-}
 
-interface Encounter {
-  id: number;
-  payer: string;
-  organization: string;
-  base_encounter_cost: number;
-}
 
 export default function HealthcareSearch() {
   // State management
