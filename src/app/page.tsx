@@ -1,102 +1,176 @@
-import Image from "next/image";
-import React from "react";
+'use client';
+
+import Link from 'next/link';
+import { ArrowRight, Search, DollarSign, Building2, Shield, Star, CheckCircle2, TrendingUp } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import Navbar from '@/components/NavBar';
 
 export default function Home() {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div className="min-h-screen bg-gray-900">
+      <Navbar />
+      
+      {/* Hero Section with Gradient */}
+      <section className="relative py-20 px-4 sm:px-6 lg:px-8 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-purple-600/20" />
+        <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]" />
+        <div className="relative max-w-7xl mx-auto">
+          <div className="text-center">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-white tracking-tight">
+              Find the Best Healthcare
+              <span className="block bg-gradient-to-r from-blue-400 to-purple-500 text-transparent bg-clip-text">
+                at the Right Price
+              </span>
+            </h1>
+            <p className="mt-6 max-w-2xl mx-auto text-lg sm:text-xl text-gray-300">
+              Compare healthcare costs across providers, make informed decisions, and save money on your medical procedures.
+            </p>
+            <div className="mt-10 flex justify-center gap-4">
+              <Button asChild size="lg" className="bg-blue-600 hover:bg-blue-700">
+                <Link href="/searchform" className="flex items-center gap-2">
+                  Start Comparing <Search size={20} />
+                </Link>
+              </Button>
+              <Button asChild size="lg" variant="outline">
+                <Link href="/signin">Sign In</Link>
+              </Button>
+            </div>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      </section>
+
+      {/* Stats Section */}
+      <section className="py-12 bg-gray-800/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 gap-8 sm:grid-cols-3">
+            <div className="text-center">
+              <p className="text-4xl font-bold text-blue-500">500+</p>
+              <p className="mt-2 text-lg text-gray-300">Healthcare Providers</p>
+            </div>
+            <div className="text-center">
+              <p className="text-4xl font-bold text-blue-500">50K+</p>
+              <p className="mt-2 text-lg text-gray-300">Procedures Listed</p>
+            </div>
+            <div className="text-center">
+              <p className="text-4xl font-bold text-blue-500">30%</p>
+              <p className="mt-2 text-lg text-gray-300">Average Savings</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold text-white">Why Choose Us?</h2>
+            <p className="mt-4 text-xl text-gray-400">Compare healthcare costs and make informed decisions</p>
+          </div>
+
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            {features.map((feature, index) => (
+              <div key={index} className="relative group">
+                <div className="bg-gray-800 rounded-xl p-8 hover:bg-gray-700/70 transition-all duration-300 hover:shadow-2xl">
+                  <div className="text-blue-500 mb-4">
+                    {feature.icon}
+                  </div>
+                  <h3 className="text-xl font-semibold text-white mb-3">{feature.title}</h3>
+                  <p className="text-gray-400">{feature.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works Section */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-800/50">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold text-white">How It Works</h2>
+            <p className="mt-4 text-xl text-gray-400">Simple steps to find the best healthcare options</p>
+          </div>
+
+          <div className="grid gap-8 md:grid-cols-3">
+            {steps.map((step, index) => (
+              <div key={index} className="relative">
+                <div className="bg-gray-800 rounded-xl p-8 hover:bg-gray-700/70 transition-all">
+                  <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center mb-6">
+                    <span className="text-xl font-bold text-white">{index + 1}</span>
+                  </div>
+                  <h3 className="text-xl font-semibold text-white mb-3">{step.title}</h3>
+                  <p className="text-gray-400">{step.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">
+            Ready to find affordable healthcare?
+          </h2>
+          <p className="text-xl text-gray-400 mb-8">
+            Join thousands of people who are saving money on their healthcare costs
+          </p>
+          <Button asChild size="lg" className="bg-blue-600 hover:bg-blue-700">
+            <Link href="/searchform" className="flex items-center gap-2">
+              Get Started <ArrowRight size={20} />
+            </Link>
+          </Button>
+        </div>
+      </section>
     </div>
   );
 }
+
+const features = [
+  {
+    icon: <DollarSign size={32} />,
+    title: "Cost Transparency",
+    description: "Compare procedure costs across different healthcare providers to make informed decisions."
+  },
+  {
+    icon: <Building2 size={32} />,
+    title: "Extensive Network",
+    description: "Access a wide network of verified healthcare providers and facilities."
+  },
+  {
+    icon: <Shield size={32} />,
+    title: "Insurance Coverage",
+    description: "See which insurance plans are accepted by different healthcare providers."
+  },
+  {
+    icon: <Star size={32} />,
+    title: "Quality Ratings",
+    description: "View provider ratings and reviews from verified patients."
+  },
+  {
+    icon: <CheckCircle2 size={32} />,
+    title: "Verified Information",
+    description: "All healthcare costs and provider information is regularly verified."
+  },
+  {
+    icon: <TrendingUp size={32} />,
+    title: "Price Trends",
+    description: "Track healthcare cost trends and find the best time to schedule."
+  }
+];
+
+const steps = [
+  {
+    title: "Search Procedure",
+    description: "Enter the medical procedure you're looking for and your insurance plan."
+  },
+  {
+    title: "Compare Costs",
+    description: "View and compare costs from different healthcare providers in your area."
+  },
+  {
+    title: "Make Your Choice",
+    description: "Choose the best provider based on cost, location, and quality ratings."
+  }
+];
