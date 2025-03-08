@@ -1,9 +1,8 @@
 {
-  "/api/chat/route": "/api/chat",
   "/_not-found/page": "/_not-found",
+  "/api/chat/route": "/api/chat",
   "/favicon.ico/route": "/favicon.ico",
   "/chat/page": "/chat",
-  "/signin/page": "/signin",
   "/page": "/",
   "/searchform/page": "/searchform"
 }

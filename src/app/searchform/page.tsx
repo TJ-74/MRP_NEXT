@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Search } from 'lucide-react';
+import { Search, Building2, Shield } from 'lucide-react';
 import Navbar from "@/components/NavBar";
 import { supabase } from '@/lib/supabase';
 
@@ -14,6 +14,12 @@ interface Hospital {
   address: string;
   contact_number: string;
   price: number;
+  city: string;
+  state: string;
+  zip: string;
+  payer: string;
+  total_claim_cost: number;
+  payer_coverage: number;
 }
 
 interface SearchFormData {
@@ -114,6 +120,7 @@ export default function HealthcareSearch() {
     try {
       console.log('-------- Search Process Started --------');
       console.log('Searching for procedure:', formData.procedure);
+      console.log('Insurance Plan:', formData.insurancePlan);
       
       // 1. Get unique encounters from procedures table
       const { data: procedureData, error: procedureError } = await supabase
@@ -143,7 +150,19 @@ export default function HealthcareSearch() {
       const limitedEncounters = uniqueEncounters.slice(0, 100);
       console.log('\n1. Unique Encounters Found:', limitedEncounters.length, 'out of', uniqueEncounters.length);
 
-      // 2. Get all matching encounters
+      // First get the payer ID for the selected insurance plan
+      const { data: selectedPayerData, error: selectedPayerError } = await supabase
+        .from('payers')
+        .select('id')
+        .eq('name', formData.insurancePlan)
+        .single();
+
+      if (selectedPayerError) {
+        console.error('Error fetching selected payer:', selectedPayerError);
+        return;
+      }
+
+      // 2. Get all matching encounters with insurance plan filter
       try {
         const { data: encountersData, error: encountersError } = await supabase
           .from('encounters')
@@ -151,10 +170,13 @@ export default function HealthcareSearch() {
             id,
             organization,
             payer,
-            base_encounter_cost
+            base_encounter_cost,
+            total_claim_cost,
+            payer_coverage
           `)
           .in('id', limitedEncounters)
-          .order('base_encounter_cost', { ascending: true });  // Order by cost to get most relevant results
+          .eq('payer', selectedPayerData.id)
+          .order('base_encounter_cost', { ascending: true });
 
         if (encountersError) {
           console.error('Error fetching encounters:', encountersError);
@@ -162,56 +184,48 @@ export default function HealthcareSearch() {
         }
 
         if (!encountersData || encountersData.length === 0) {
-          console.error('No encounters found for the given IDs');
+          console.error('No encounters found for the given criteria');
           return;
         }
 
         console.log('\n2. Encounters Data:', encountersData.length, 'results found');
 
-        // Continue with organization and payer queries
+        // Continue with organization queries
         const organizationIds = [...new Set(encountersData.map(enc => enc.organization))].filter(Boolean);
-        const payerIds = [...new Set(encountersData.map(enc => enc.payer))].filter(Boolean);
 
-        if (organizationIds.length === 0 || payerIds.length === 0) {
-          console.error('No valid organization or payer IDs found');
+        if (organizationIds.length === 0) {
+          console.error('No valid organization IDs found');
           return;
         }
 
-        // 3. Get organization and payer details
-        const [organizationsResponse, payersResponse] = await Promise.all([
-          supabase
-            .from('organizations')
-            .select('id, name')
-            .in('id', organizationIds),
-          supabase
-            .from('payers')
-            .select('id, name')
-            .in('id', payerIds)
-        ]);
+        // 3. Get organization details
+        const { data: organizationsData, error: organizationsError } = await supabase
+          .from('organizations')
+          .select('id, name, address, city, state, zip, phone')
+          .in('id', organizationIds);
 
-        if (organizationsResponse.error) {
-          console.error('Error fetching organizations:', organizationsResponse.error);
+        if (organizationsError) {
+          console.error('Error fetching organizations:', organizationsError);
           return;
         }
 
-        if (payersResponse.error) {
-          console.error('Error fetching payers:', payersResponse.error);
-          return;
-        }
-
-        console.log('\n3. Organizations Found:', organizationsResponse.data);
-        console.log('   Payers Found:', payersResponse.data);
+        console.log('\n3. Organizations Found:', organizationsData);
 
         // 4. Combine all the data
         const results = encountersData.map(encounter => {
-          const organization = organizationsResponse.data.find(org => org.id === encounter.organization);
-          const payer = payersResponse.data.find(p => p.id === encounter.payer);
+          const organization = organizationsData.find(org => org.id === encounter.organization);
           return {
             id: encounter.id,
             name: organization?.name || 'Unknown Hospital',
             price: encounter.base_encounter_cost,
-            address: 'Address not available',
-            contact_number: payer?.name || 'Insurance information not available'
+            total_claim_cost: encounter.total_claim_cost,
+            payer_coverage: encounter.payer_coverage,
+            address: organization?.address || 'Address not available',
+            contact_number: organization?.phone || 'Contact not available',
+            city: organization?.city || 'City not available',
+            state: organization?.state || 'State not available',
+            zip: organization?.zip || 'Zip code not available',
+            payer: formData.insurancePlan
           };
         });
 
@@ -308,28 +322,102 @@ export default function HealthcareSearch() {
         {/* Results Section */}
         {searchResults.length > 0 && (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-white">Search Results</h2>
-            {searchResults.map((hospital) => (
-              <Card key={hospital.id} className="w-full bg-gray-800 border-gray-700 hover:shadow-lg transition-shadow duration-300">
-                <CardContent className="p-6">
-                  <div className="flex justify-between items-start">
-                    <div className="space-y-2">
-                      <h3 className="text-xl font-semibold text-white">{hospital.name}</h3>
-                      <p className="text-gray-400">{hospital.address}</p>
-                      <p className="text-gray-400 flex items-center gap-2">
-                        <span className="font-medium text-gray-300">Insurance:</span> {hospital.contact_number}
-                      </p>
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-white">Search Results</h2>
+              <p className="text-gray-400">{searchResults.length} providers found</p>
+            </div>
+            
+            <div className="grid gap-6">
+              {searchResults.map((hospital) => (
+                <Card key={hospital.id} className="w-full bg-gray-800 border-gray-700 hover:bg-gray-800/80 transition-all duration-300">
+                  <CardContent className="p-6">
+                    <div className="flex flex-col md:flex-row justify-between gap-6">
+                      {/* Hospital Info */}
+                      <div className="flex-grow space-y-4">
+                        <div>
+                          <h3 className="text-xl font-semibold text-white mb-2">{hospital.name}</h3>
+                          <div className="space-y-1">
+                            <div className="flex items-center text-gray-400 text-sm">
+                              <Building2 size={16} className="mr-2 flex-shrink-0" />
+                              <span>{hospital.address}</span>
+                            </div>
+                            <div className="text-gray-400 text-sm pl-6">
+                              {hospital.city}, {hospital.state} {hospital.zip}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex flex-col sm:flex-row items-start gap-6">
+                          {/* Contact Info */}
+                          <div>
+                            <p className="text-sm font-medium text-gray-300 mb-1">Contact</p>
+                            <div className="flex items-center text-gray-400">
+                              <a href={`tel:${hospital.contact_number}`} 
+                                 className="hover:text-blue-400 transition-colors">
+                                {hospital.contact_number}
+                              </a>
+                            </div>
+                          </div>
+
+                          {/* Insurance Info */}
+                          <div>
+                            <p className="text-sm font-medium text-gray-300 mb-1">Insurance Plan</p>
+                            <div className="flex items-center text-gray-400">
+                              <Shield size={16} className="mr-2" />
+                              {hospital.payer}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Price Info */}
+                      <div className="flex flex-col items-end justify-between md:min-w-[240px] p-4 bg-gray-900/50 rounded-lg">
+                        <div className="text-right space-y-3">
+                          <div>
+                            <p className="text-3xl font-bold text-green-400">
+                              ${hospital.price.toLocaleString()}
+                            </p>
+                            <p className="text-sm text-gray-400">Base Cost</p>
+                          </div>
+
+                          <div className="border-t border-gray-700 pt-3">
+                            <div className="mb-2">
+                              <p className="text-lg font-semibold text-blue-400">
+                                ${hospital.total_claim_cost.toLocaleString()}
+                              </p>
+                              <p className="text-sm text-gray-400">Total Claim Cost</p>
+                            </div>
+
+                            <div>
+                              <p className="text-lg font-semibold text-purple-400">
+                                ${hospital.payer_coverage.toLocaleString()}
+                              </p>
+                              <p className="text-sm text-gray-400">Insurance Coverage</p>
+                            </div>
+
+                            <div className="mt-2 text-xs text-gray-500">
+                              Out of Pocket: ${(hospital.total_claim_cost - hospital.payer_coverage).toLocaleString()}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="mt-4 w-full">
+                          <Button 
+                            className="w-full bg-blue-600 hover:bg-blue-700"
+                            onClick={() => window.open(`tel:${hospital.contact_number}`)}
+                          >
+                            Contact Provider
+                          </Button>
+                          {/* <p className="text-xs text-center text-gray-500 mt-2">
+                            ID: {hospital.id}
+                          </p> */}
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-2xl font-bold text-green-400">
-                        ${hospital.price.toLocaleString()}
-                      </p>
-                      <p className="text-sm text-gray-400 mt-1">Estimated Cost</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
         )}
       </div>

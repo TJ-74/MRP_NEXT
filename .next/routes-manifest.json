@@ -44,12 +44,6 @@
       "regex": "^/searchform(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/searchform(?:/)?$"
-    },
-    {
-      "page": "/signin",
-      "regex": "^/signin(?:/)?$",
-      "routeKeys": {},
-      "namedRegex": "^/signin(?:/)?$"
     }
   ],
   "dataRoutes": [],
