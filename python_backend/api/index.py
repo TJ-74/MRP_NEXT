@@ -1,5 +1,9 @@
 from app.main import app
 from mangum import Mangum
 
-# Create handler for AWS Lambda / Vercel
-handler = Mangum(app) 
+# Create ASGI handler
+asgi_handler = Mangum(app, lifespan="off")
+
+# Create handler for Vercel
+def handler(event, context):
+    return asgi_handler(event, context) 
