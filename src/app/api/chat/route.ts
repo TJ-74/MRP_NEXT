@@ -32,6 +32,9 @@ const SYSTEM_PROMPT = `You are a Healthcare Price Transparency Assistant for Cal
 3. Highlight the most relevant procedures
 Make your responses concise and easy to understand.`;
 
+// Get the Python API URL from environment variable or use default
+const PYTHON_API_URL = process.env.PYTHON_API_URL || 'http://127.0.0.1:8000';
+
 export async function POST(req: Request) {
   try {
     const { messages } = await req.json() as ChatRequest;
@@ -42,7 +45,7 @@ export async function POST(req: Request) {
     console.log('Executing search with query:', userQuery);
     
     try {
-      const searchResponse = await fetch('http://127.0.0.1:8000/search', {
+      const searchResponse = await fetch(`${PYTHON_API_URL}/api/search`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
