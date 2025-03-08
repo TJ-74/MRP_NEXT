@@ -1,7 +1,7 @@
 {
-  "/_not-found/page": "/_not-found",
   "/api/chat/route": "/api/chat",
   "/favicon.ico/route": "/favicon.ico",
+  "/_not-found/page": "/_not-found",
   "/chat/page": "/chat",
   "/page": "/",
   "/searchform/page": "/searchform"
