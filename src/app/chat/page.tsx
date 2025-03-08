@@ -2,13 +2,28 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Send, Bot } from 'lucide-react';
+import { Send } from 'lucide-react';
 import Navbar from '@/components/NavBar';
+import { ChatMessage } from '@/components/ChatMessage';
+
+interface SearchResult {
+  id: string;
+  score: string;
+  text: string;
+  category?: string;
+}
 
 interface Message {
   id: string;
   text: string;
   sender: 'user' | 'ai' | 'system';
+  searchResults?: SearchResult[];
+  isDone?: boolean;
+}
+
+interface AIResponse {
+  message: string;
+  searchResults: SearchResult[];
 }
 
 let messageCounter = 0;
@@ -26,6 +41,14 @@ export default function Chat() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  const handleMarkDone = (messageId: string) => {
+    setMessages(prev =>
+      prev.map(msg =>
+        msg.id === messageId ? { ...msg, isDone: true } : msg
+      )
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,12 +87,13 @@ export default function Chat() {
         throw new Error(errorData.error || 'Failed to get AI response');
       }
 
-      const data = await response.json();
+      const data = await response.json() as AIResponse;
       messageCounter++;
       const aiMessage: Message = {
         id: `msg-${messageCounter}`,
         text: data.message,
         sender: 'ai',
+        searchResults: data.searchResults,
       };
       setMessages(prev => [...prev, aiMessage]);
     } catch (error) {
@@ -77,7 +101,7 @@ export default function Chat() {
       messageCounter++;
       const errorMessage: Message = {
         id: `msg-${messageCounter}`,
-        text: "I apologize, but I'm having trouble connecting to the AI service right now. Please try again in a moment.",
+        text: error instanceof Error ? error.message : "An unexpected error occurred.",
         sender: 'system',
       };
       setMessages(prev => [...prev, errorMessage]);
@@ -98,25 +122,11 @@ export default function Chat() {
               </div>
             ) : (
               messages.map((message) => (
-                <div
+                <ChatMessage
                   key={message.id}
-                  className={`flex ${
-                    message.sender === 'user' ? 'justify-end' : 'justify-start'
-                  }`}
-                >
-                  <div
-                    className={`max-w-[80%] rounded-lg px-4 py-2 flex items-start ${
-                      message.sender === 'user'
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-700 text-white'
-                    }`}
-                  >
-                    {(message.sender === 'ai' || message.sender === 'system') && (
-                      <Bot className="mr-2 mt-1" size={16} />
-                    )}
-                    <p className={message.sender === 'system' ? 'text-gray-200' : ''}>{message.text}</p>
-                  </div>
-                </div>
+                  {...message}
+                  onMarkDone={() => handleMarkDone(message.id)}
+                />
               ))
             )}
             <div ref={messagesEndRef} />
