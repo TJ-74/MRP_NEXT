@@ -1,0 +1,23 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "healthcare-procedures-api"
+version = "0.1.0"
+authors = [
+  { name = "Your Name" },
+]
+description = "Healthcare Procedures API"
+requires-python = ">=3.9"
+dependencies = [
+    "pinecone>=3.0.0",
+    "python-dotenv>=1.0.0",
+    "fastapi>=0.110.0",
+    "uvicorn>=0.27.1",
+    "python-multipart>=0.0.9",
+    "mangum>=0.17.0"
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"] 

@@ -1,4 +1,5 @@
 from app.main import app
+from mangum import Mangum
 
-# Handler for Vercel serverless function
-handler = app 
+# Create handler for AWS Lambda / Vercel
+handler = Mangum(app) 
