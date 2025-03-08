@@ -42,6 +42,7 @@ export async function POST(req: Request) {
     console.log('Executing search with query:', userQuery);
     
     try {
+      // Backend is now located at ../python_backend
       const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8000';
       const searchResponse = await fetch(`${BACKEND_URL}/search`, {
         method: 'POST',
