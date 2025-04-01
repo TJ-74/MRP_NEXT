@@ -2,10 +2,12 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Send, Loader2, X, Building2, Shield } from 'lucide-react';
+import { Send, Loader2, X, Building2, Shield, BarChart } from 'lucide-react';
 import Navbar from '@/components/NavBar';
 import { ChatMessage } from '@/components/ChatMessage';
 import { supabase } from '@/lib/supabase';
+// import { Bot } from 'lucide-react';
+// import SqlQueryWindow from '@/components/SqlQueryWindow';
 
 interface SearchResult {
   id: string;
@@ -18,14 +20,16 @@ interface Message {
   id: string;
   text: string;
   sender: 'user' | 'ai' | 'system';
+  role: 'user' | 'assistant';
+  content: string;
   searchResults?: SearchResult[];
   isDone?: boolean;
 }
 
-interface AIResponse {
-  message: string;
-  searchResults: SearchResult[];
-}
+// interface AIResponse {
+//   message: string;
+//   searchResults: SearchResult[];
+// }
 
 interface Hospital {
   id: string;
@@ -45,11 +49,7 @@ let messageCounter = 0;
 
 export default function Chat() {
   const [input, setInput] = useState('');
-  const [messages, setMessages] = useState<Message[]>(() => [{
-    id: 'system-init',
-    text: "Hello! I'm your healthcare assistant. How can I help you today?",
-    sender: 'system',
-  }]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
@@ -60,6 +60,13 @@ export default function Chat() {
   const [isLoadingHospitals, setIsLoadingHospitals] = useState(false);
   const [insurancePlans, setInsurancePlans] = useState<string[]>([]);
   const [selectedInsurance, setSelectedInsurance] = useState('');
+  // const [currentSqlQuery, setCurrentSqlQuery] = useState<string | null>(null);
+
+  // Reset messages when component mounts (page load)
+  useEffect(() => {
+    messageCounter = 0;  // Reset the message counter
+    setMessages([]); // Start with empty messages
+  }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -250,6 +257,8 @@ export default function Chat() {
       id: `msg-${messageCounter}`,
       text: userMessage,
       sender: 'user',
+      role: 'user',
+      content: userMessage
     };
     setMessages(prev => [...prev, newUserMessage]);
 
@@ -262,6 +271,8 @@ export default function Chat() {
         id: loadingMessageId, 
         text: "Analyzing your question...", 
         sender: 'ai',
+        role: 'assistant',
+        content: "Analyzing your question..."
       }
     ]);
 
@@ -272,23 +283,16 @@ export default function Chat() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          messages: [
-            {
-              role: 'user',
-              content: userMessage,
-            }
-          ],
+          messages: [...messages, newUserMessage]
         }),
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to get AI response');
+        throw new Error('Failed to get response');
       }
 
-      const data = await response.json() as AIResponse;
+      const data = await response.json();
       
-      // Replace loading message with actual response
       setMessages(prev => 
         prev.map(msg => 
           msg.id === loadingMessageId
@@ -296,7 +300,10 @@ export default function Chat() {
                 id: loadingMessageId,
                 text: data.message,
                 sender: 'ai',
+                role: 'assistant',
+                content: data.message,
                 searchResults: data.searchResults,
+                isDone: true
               }
             : msg
         )
@@ -312,6 +319,9 @@ export default function Chat() {
                 id: loadingMessageId,
                 text: error instanceof Error ? error.message : "An unexpected error occurred.",
                 sender: 'system',
+                role: 'assistant',
+                content: error instanceof Error ? error.message : "An unexpected error occurred.",
+                isDone: true
               }
             : msg
         )
@@ -329,28 +339,71 @@ export default function Chat() {
     }
   };
 
+  // Update the handleOpenGraph function
+  const handleOpenGraph = () => {
+    const procedure = encodeURIComponent(selectedProcedure);
+    window.open(`/graph?procedure=${procedure}`, '_blank');
+  };
+
+  const handleSqlExecute = async (query: string) => {
+    try {
+      const response = await fetch('/api/sql', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ query }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to execute SQL query');
+      }
+
+      const data = await response.json();
+      
+      // Add the result to the chat
+      setMessages(prev => [
+        ...prev,
+        {
+          id: Date.now().toString(),
+          text: `Query result:\n${JSON.stringify(data.data, null, 2)}`,
+          sender: 'ai',
+          role: 'assistant',
+          content: `Query result:\n${JSON.stringify(data.data, null, 2)}`,
+          isDone: true
+        }
+      ]);
+    } catch (error) {
+      console.error('SQL execution error:', error);
+      setMessages(prev => [
+        ...prev,
+        {
+          id: Date.now().toString(),
+          text: `Error executing query: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          sender: 'system',
+          role: 'assistant',
+          content: `Error executing query: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          isDone: true
+        }
+      ]);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-950">
+    <div className="min-h-screen claude-bg flex flex-col">
       <Navbar />
-      <div className="max-w-6xl mx-auto px-4 py-6">
-        <div className="flex">
-          {/* Chat Area */}
-          <div className={`transition-all duration-300 ease-in-out ${
-            showResultsPanel ? 'w-1/2 pr-3' : 'w-full'
-          }`}>
-            <div className="bg-gray-800/70 backdrop-blur-sm rounded-xl shadow-2xl h-[calc(100vh-8rem)] flex flex-col border border-gray-700/50">
-              <div className="p-4 border-b border-gray-700/50 bg-gray-800/80">
-                <h2 className="text-xl font-semibold text-white">Healthcare Procedure Assistant</h2>
-                <p className="text-gray-300 text-sm">Ask about medical procedures and pricing at California hospitals</p>
-              </div>
-              
-              <div className="flex-1 overflow-y-auto p-5 space-y-2 scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-transparent">
-                {messages.length === 0 ? (
-                  <div className="flex items-center justify-center h-full text-gray-400">
-                    <p>Start a conversation by sending a message!</p>
-                  </div>
-                ) : (
-                  messages.map((message) => (
+      
+      <div className="flex flex-1 h-[calc(100vh-4rem)] relative overflow-hidden">
+        {/* Main Chat Container */}
+        <div className={`flex flex-col transition-all duration-300 ease-in-out ${
+          showResultsPanel ? 'w-[60%]' : 'w-full'
+        }`}>
+          {/* Chat Messages Area */}
+          <div className="flex-1 overflow-y-auto claude-scrollbar relative">
+            <div className="absolute inset-0 py-6">
+              <div className="px-4 md:px-6 h-full">
+                <div className="space-y-6 pt-6">
+                  {messages.map((message) => (
                     <ChatMessage
                       key={message.id}
                       id={message.id}
@@ -360,26 +413,32 @@ export default function Chat() {
                       isDone={message.isDone}
                       onMarkDone={() => handleMarkDone(message.id)}
                       onProcedureClick={handleProcedureClick}
+                      onSqlExecute={handleSqlExecute}
                     />
-                  ))
-                )}
-                <div ref={messagesEndRef} />
+                  ))}
+                  <div ref={messagesEndRef} className="h-24" />
+                </div>
               </div>
-
-              <form onSubmit={handleSubmit} className="p-4 border-t border-gray-700/50 bg-gray-800/80">
-                <div className="flex space-x-4">
+            </div>
+          </div>
+          
+          {/* Input Area */}
+          <div className="border-t border-gray-700/20 bg-gradient-to-r from-gray-900/90 to-gray-800/90 backdrop-blur-md py-4 shadow-lg">
+            <div className="px-4 md:px-6">
+              <form onSubmit={handleSubmit} className="w-full">
+                <div className="flex space-x-3">
                   <input
                     type="text"
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     placeholder="Type your question about healthcare procedures..."
-                    className="flex-1 bg-gray-700/80 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 border border-gray-600/50"
+                    className="flex-1 bg-gray-800/50 text-white rounded-lg px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 border border-gray-700/50 placeholder-gray-400 shadow-sm"
                     disabled={isLoading}
                   />
                   <Button
                     type="submit"
                     disabled={isLoading || !input.trim()}
-                    className={`bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg flex items-center justify-center min-w-[50px] transition-all ${
+                    className={`bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3.5 rounded-lg flex items-center justify-center min-w-[60px] transition-all shadow-md ${
                       isLoading ? 'opacity-70 cursor-not-allowed' : ''
                     }`}
                   >
@@ -390,98 +449,129 @@ export default function Chat() {
                     )}
                   </Button>
                 </div>
+                <div className="text-xs text-gray-500 mt-2 text-center">
+                  Results are based on available California healthcare pricing data.
+                </div>
               </form>
             </div>
           </div>
+        </div>
 
-          {/* Hospital Results Panel */}
+        {/* Hospital Results Panel */}
+        <div className={`fixed top-16 bottom-0 right-0 w-[40%] border-l border-gray-700/50 transition-all duration-300 ease-in-out transform ${
+          showResultsPanel ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
+        }`}>
           {showResultsPanel && (
-            <div className="w-1/2 pl-3 animate-slide-in">
-              <div className="bg-gray-800/70 backdrop-blur-sm rounded-xl shadow-2xl h-[calc(100vh-8rem)] flex flex-col border border-gray-700/50 overflow-hidden">
-                <div className="p-4 border-b border-gray-700/50 bg-gray-800/80 flex justify-between items-center">
+            <div className="h-full flex flex-col bg-gray-800/60 backdrop-blur-md animate-fade-in">
+              {/* Fixed Header */}
+              <div className="sticky top-0 z-20">
+                <div className="p-4 md:p-5 border-b border-gray-700/50 bg-gradient-to-r from-gray-800/90 to-gray-700/90 flex justify-between items-center">
                   <div>
                     <h2 className="text-xl font-semibold text-white">Hospital Results</h2>
-                    <p className="text-gray-300 text-sm truncate max-w-[90%]">{selectedProcedure}</p>
+                    <p className="text-gray-300 text-sm truncate max-w-[90%] mt-1">{selectedProcedure}</p>
                   </div>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => setShowResultsPanel(false)} 
-                    className="h-8 w-8 p-0 rounded-full bg-gray-700/50 hover:bg-gray-600"
-                  >
-                    <X size={16} />
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleOpenGraph}
+                      className="h-8 w-8 p-0 rounded-full bg-gray-700/70 hover:bg-gray-600 shadow-sm"
+                      title="View Cost Comparison Graph"
+                    >
+                      <BarChart size={16} />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowResultsPanel(false)}
+                      className="h-8 w-8 p-0 rounded-full bg-gray-700/70 hover:bg-gray-600 shadow-sm"
+                      title="Close Results"
+                    >
+                      <X size={16} />
+                    </Button>
+                  </div>
                 </div>
 
                 {/* Insurance Selector */}
-                <div className="p-4 border-b border-gray-700/50 bg-gray-800/70">
+                <div className="p-4 md:p-5 border-b border-gray-700/50 bg-gray-800/70">
                   <label className="block text-sm font-medium text-gray-300 mb-2">Insurance Plan</label>
                   <select
-                    className="w-full p-2 bg-gray-700 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    className="w-full p-2.5 bg-gray-700/80 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all appearance-none pl-4 pr-8"
                     value={selectedInsurance}
                     onChange={handleInsuranceChange}
                     disabled={isLoadingHospitals}
+                    style={{ backgroundImage: 'url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 20 20\'%3E%3Cpath stroke=\'%236B7280\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'1.5\' d=\'m6 8 4 4 4-4\'/%3E%3C/svg%3E")', backgroundSize: '16px 16px', backgroundPosition: 'right 0.75rem center', backgroundRepeat: 'no-repeat' }}
                   >
                     {insurancePlans.map((plan) => (
                       <option key={plan} value={plan}>{plan}</option>
                     ))}
                   </select>
                 </div>
-                
-                <div className="flex-1 overflow-y-auto p-4">
+              </div>
+              
+              {/* Scrollable Results Area */}
+              <div className="flex-1 overflow-y-auto hospital-scrollbar">
+                <div className="p-4 md:p-5">
                   {isLoadingHospitals ? (
                     <div className="flex flex-col items-center justify-center h-full">
-                      <Loader2 size={32} className="text-blue-400 animate-spin mb-4" />
-                      <p className="text-gray-300">Loading hospital data...</p>
+                      <Loader2 size={36} className="text-blue-400 animate-spin mb-4" />
+                      <p className="text-gray-300 font-medium">Loading hospital data...</p>
+                      <p className="text-gray-500 text-sm mt-1">Please wait while we retrieve the latest information.</p>
                     </div>
                   ) : hospitalResults.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full text-gray-400">
-                      <p className="text-center">No hospital data found for this procedure and insurance plan.</p>
-                      <p className="text-center text-sm mt-2">Try selecting a different insurance plan.</p>
+                    <div className="flex flex-col items-center justify-center h-full text-center px-6">
+                      <Building2 size={36} className="text-gray-500 mb-4" />
+                      <p className="text-gray-300 font-medium">No hospital data found for this procedure and insurance plan.</p>
+                      <p className="text-gray-400 text-sm mt-2">Try selecting a different insurance plan or ask about another procedure.</p>
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      <p className="text-gray-300 text-sm">{hospitalResults.length} providers found</p>
+                      <div className="flex items-center justify-between mb-4">
+                        <p className="text-gray-300 text-sm font-medium">{hospitalResults.length} providers found</p>
+                        <p className="text-xs text-gray-500">Sorted by price (lowest first)</p>
+                      </div>
                       
-                      {hospitalResults.map((hospital) => (
-                        <div key={hospital.id} className="bg-gray-800 border border-gray-700 rounded-lg p-4 hover:bg-gray-750 transition-all">
-                          <div className="mb-3">
-                            <h3 className="text-lg font-semibold text-white">{hospital.name}</h3>
-                            <div className="text-gray-400 text-sm mt-1">
-                              <div className="flex items-start">
-                                <Building2 size={16} className="mr-2 mt-0.5 flex-shrink-0" />
-                                <div>
-                                  {hospital.address}<br />
-                                  {hospital.city}, {hospital.state} {hospital.zip}
+                      <div className="space-y-4 pb-2">
+                        {hospitalResults.map((hospital) => (
+                          <div key={hospital.id} className="bg-gray-800/80 border border-gray-700 rounded-lg p-4 hover:bg-gray-750 transition-all shadow-md hover:shadow-lg group">
+                            <div className="mb-3">
+                              <h3 className="text-lg font-semibold text-white group-hover:text-blue-300 transition-colors">{hospital.name}</h3>
+                              <div className="text-gray-400 text-sm mt-1">
+                                <div className="flex items-start">
+                                  <Building2 size={16} className="mr-2 mt-0.5 flex-shrink-0 text-gray-500" />
+                                  <div className="break-words">
+                                    {hospital.address}<br />
+                                    {hospital.city}, {hospital.state} {hospital.zip}
+                                  </div>
                                 </div>
                               </div>
                             </div>
-                          </div>
-                          
-                          <div className="flex flex-wrap justify-between items-center mt-4">
-                            <div className="flex items-center mr-4 mb-2">
-                              <Shield size={16} className="mr-2 text-blue-400" />
-                              <span className="text-gray-300 text-sm">{hospital.payer}</span>
+                            
+                            <div className="flex flex-wrap justify-between items-center mt-4">
+                              <div className="flex items-center mr-4 mb-2">
+                                <Shield size={16} className="mr-2 text-blue-400" />
+                                <span className="text-gray-300 text-sm">{hospital.payer}</span>
+                              </div>
+                              
+                              <div className="text-right">
+                                <p className="text-2xl font-bold text-green-400 group-hover:text-green-300 transition-colors">${hospital.price.toLocaleString()}</p>
+                                <p className="text-xs text-gray-400">Base Cost</p>
+                              </div>
                             </div>
                             
-                            <div className="text-right">
-                              <p className="text-2xl font-bold text-green-400">${hospital.price.toLocaleString()}</p>
-                              <p className="text-xs text-gray-400">Base Cost</p>
+                            <div className="grid grid-cols-2 gap-4 mt-3 text-sm border-t border-gray-700 pt-3">
+                              <div>
+                                <p className="text-blue-400 font-medium group-hover:text-blue-300 transition-colors">${hospital.total_claim_cost.toLocaleString()}</p>
+                                <p className="text-gray-500">Total Cost</p>
+                              </div>
+                              <div>
+                                <p className="text-purple-400 font-medium group-hover:text-purple-300 transition-colors">${hospital.payer_coverage.toLocaleString()}</p>
+                                <p className="text-gray-500">Insurance Coverage</p>
+                              </div>
                             </div>
                           </div>
-                          
-                          <div className="grid grid-cols-2 gap-4 mt-3 text-sm border-t border-gray-700 pt-3">
-                            <div>
-                              <p className="text-blue-400 font-medium">${hospital.total_claim_cost.toLocaleString()}</p>
-                              <p className="text-gray-500">Total Cost</p>
-                            </div>
-                            <div>
-                              <p className="text-purple-400 font-medium">${hospital.payer_coverage.toLocaleString()}</p>
-                              <p className="text-gray-500">Insurance Coverage</p>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>

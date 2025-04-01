@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { Components } from 'react-markdown';
+import SqlQueryWindow from './SqlQueryWindow';
 
 interface SearchResult {
   id: string;
@@ -20,58 +21,85 @@ interface ChatMessageProps {
   onMarkDone?: () => void;
   isDone?: boolean;
   onProcedureClick?: (procedure: string) => void;
+  onSqlExecute?: (query: string) => void;
 }
 
 const MarkdownComponents: Components = {
   p: ({ children }) => (
-    <p className="mb-2 last:mb-0">{children}</p>
+    <p className="mb-2 last:mb-0 leading-relaxed break-words">{children}</p>
   ),
   ul: ({  children }) => (
-    <ul className="list-disc ml-4 mb-2">{children}</ul>
+    <ul className="list-disc ml-4 mb-3 mt-2 overflow-x-hidden">{children}</ul>
   ),
   ol: ({ children }) => (
-    <ol className="list-decimal ml-4 mb-2">{children}</ol>
+    <ol className="list-decimal ml-4 mb-3 mt-2 overflow-x-hidden">{children}</ol>
   ),
   li: ({  children }) => (
-    <li className="mb-1">{children}</li>
+    <li className="mb-1 leading-relaxed break-words">{children}</li>
   ),
   h1: ({  children }) => (
-    <h1 className="text-xl font-bold mb-2">{children}</h1>
+    <h1 className="text-xl font-bold mb-3 mt-4 break-words">{children}</h1>
   ),
   h2: ({  children }) => (
-    <h2 className="text-lg font-bold mb-2">{children}</h2>
+    <h2 className="text-lg font-bold mb-2 mt-3 break-words">{children}</h2>
   ),
   h3: ({  children }) => (
-    <h3 className="text-md font-bold mb-2">{children}</h3>
+    <h3 className="text-md font-bold mb-2 mt-3 break-words">{children}</h3>
   ),
   strong: ({  children }) => (
-    <strong className="font-bold">{children}</strong>
+    <strong className="font-bold text-white break-words">{children}</strong>
   ),
   em: ({  children }) => (
-    <em className="italic">{children}</em>
+    <em className="italic text-gray-200 break-words">{children}</em>
   ),
   blockquote: ({  children }) => (
-    <blockquote className="border-l-2 border-gray-400 pl-4 my-2 italic">
+    <blockquote className="border-l-2 border-blue-400 pl-4 my-3 italic text-gray-300 break-words">
       {children}
     </blockquote>
   ),
   code: ({ children }) => (
-    <code className="bg-gray-800 px-1 py-0.5 rounded text-gray-200">
+    <code className="bg-gray-800 px-1.5 py-0.5 rounded text-blue-300 font-mono text-sm break-all whitespace-pre-wrap">
       {children}
     </code>
+  ),
+  table: ({ children }) => (
+    <div className="overflow-x-auto my-3 table-container">
+      <table className="min-w-full divide-y divide-gray-700 border border-gray-700 rounded">
+        {children}
+      </table>
+    </div>
+  ),
+  thead: ({ children }) => (
+    <thead className="bg-gray-800">{children}</thead>
+  ),
+  tbody: ({ children }) => (
+    <tbody className="divide-y divide-gray-700">{children}</tbody>
+  ),
+  tr: ({ children }) => (
+    <tr>{children}</tr>
+  ),
+  th: ({ children }) => (
+    <th className="px-3 py-2 text-left text-xs font-medium text-gray-300 uppercase tracking-wider break-words">{children}</th>
+  ),
+  td: ({ children }) => (
+    <td className="px-3 py-2 whitespace-normal break-words text-sm text-gray-300">{children}</td>
   ),
 };
 
 export function ChatMessage({ 
+
   text, 
   sender, 
   searchResults, 
   onMarkDone, 
   isDone: propIsDone,
-  onProcedureClick 
+  onProcedureClick,
+  onSqlExecute
 }: ChatMessageProps) {
   const [localIsDone, setLocalIsDone] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [showSqlWindow, setShowSqlWindow] = useState(false);
+  const [sqlQuery, setSqlQuery] = useState<string | null>(null);
   
   const isDone = propIsDone || localIsDone;
 
@@ -97,51 +125,62 @@ export function ChatMessage({
     return withBullets;
   };
 
+  // Check if the message contains a SQL query
+  React.useEffect(() => {
+    if (text.includes('Generated SQL Query:')) {
+      const query = text.split('Generated SQL Query:')[1].trim();
+      setSqlQuery(query);
+      setShowSqlWindow(true);
+    }
+  }, [text]);
+
   return (
-    <div className={`flex ${sender === 'user' ? 'justify-end' : 'justify-start'} mb-4`}>
+    <div className={`flex ${sender === 'user' ? 'justify-end' : 'justify-start'} mb-6 message-appear`}>
+      {/* Avatar for non-user messages */}
+      {(sender === 'ai' || sender === 'system') && (
+        <div className="claude-avatar ai flex-shrink-0 mr-3">
+          <Bot className="text-white" size={18} />
+        </div>
+      )}
+      
       <div
-        className={`max-w-[85%] rounded-lg px-5 py-3 shadow-md transition-all ${
+        className={`w-auto max-w-[90%] claude-message-bubble ${
           sender === 'user'
-            ? 'bg-blue-600 text-white'
-            : isDone
-            ? 'bg-gradient-to-r from-green-700 to-green-600 text-white'
-            : 'bg-gradient-to-r from-gray-700 to-gray-800 text-white'
+            ? 'user bg-indigo-600/90 text-white rounded-2xl rounded-tr-sm ml-12'
+            : sender === 'system'
+            ? 'system bg-gray-800/90 text-white rounded-2xl rounded-tl-sm mr-12'
+            : 'ai bg-gray-800/90 text-white rounded-2xl rounded-tl-sm mr-12'
         }`}
       >
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex items-start">
-            {sender === 'user' && (
-              <User className="mr-2 mt-1 flex-shrink-0 text-blue-200" size={18} />
-            )}
-            {(sender === 'ai' || sender === 'system') && (
-              <Bot className="mr-2 mt-1 flex-shrink-0 text-gray-200" size={18} />
-            )}
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1 overflow-hidden">
             <div 
-              className={`prose prose-invert max-w-none ${
-                !isExpanded && text.length > 300 ? 'cursor-pointer' : ''
+              className={`prose prose-invert w-full ${
+                !isExpanded && text.length > 350 ? 'cursor-pointer' : ''
               }`}
-              onClick={() => text.length > 300 && setIsExpanded(!isExpanded)}
+              onClick={() => text.length > 350 && setIsExpanded(!isExpanded)}
             >
-              <div className="markdown-content">
+              <div className="markdown-content text-gray-100">
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
                   components={MarkdownComponents}
                 >
-                  {isExpanded || text.length <= 300 
+                  {isExpanded || text.length <= 350 
                     ? formatText(text)
-                    : formatText(text.slice(0, 300) + '... (Click to expand)')}
+                    : formatText(text.slice(0, 350) + '... (Click to expand)')}
                 </ReactMarkdown>
               </div>
             </div>
           </div>
+          
           {sender === 'ai' && (
             <Button
               variant="ghost"
               size="sm"
-              className={`ml-2 p-1 h-7 rounded-full transition-all ${
+              className={`ml-2 p-1 h-8 w-8 rounded-full transition-all flex-shrink-0 ${
                 isDone 
-                  ? 'bg-green-600 text-white hover:bg-green-500' 
-                  : 'bg-gray-600 text-gray-300 hover:bg-gray-500 hover:text-white'
+                  ? 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-md' 
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white'
               }`}
               onClick={handleMarkDone}
               disabled={isDone}
@@ -157,19 +196,19 @@ export function ChatMessage({
         </div>
 
         {searchResults && searchResults.length > 0 && (
-          <div className="mt-4 text-sm border-t border-gray-500 pt-4">
-            <p className="text-gray-200 mb-3 font-medium text-xs uppercase tracking-wider">Related Procedures</p>
+          <div className="mt-5 text-sm border-t border-gray-500/30 pt-4">
+            <p className="text-gray-300 mb-3 font-medium text-xs uppercase tracking-wider">Related Procedures</p>
             <div className="space-y-3">
               {searchResults.map((result, index) => (
                 <div
                   key={result.id}
-                  className="bg-gray-800/50 backdrop-blur-sm rounded-md p-3 text-gray-200 hover:bg-gray-700/50 transition-all border border-gray-700/50 cursor-pointer group"
+                  className="bg-gray-800/40 backdrop-blur-sm rounded-lg p-3.5 text-gray-200 hover:bg-gray-700/50 transition-all border border-gray-700/30 cursor-pointer group hover:shadow-md"
                   onClick={() => handleProcedureClick(result.text)}
                 >
                   <div className="flex items-start">
-                    <span className="flex-shrink-0 w-5 h-5 rounded-full bg-gray-700 flex items-center justify-center text-xs mr-3">{index + 1}</span>
-                    <div className="flex-1">
-                      <div className="prose prose-invert max-w-none text-sm">
+                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-600/70 flex items-center justify-center text-xs font-medium mr-3 shadow-sm">{index + 1}</span>
+                    <div className="flex-1 overflow-hidden">
+                      <div className="prose prose-invert max-w-none text-sm text-gray-200">
                         <ReactMarkdown
                           remarkPlugins={[remarkGfm]}
                           components={MarkdownComponents}
@@ -178,14 +217,29 @@ export function ChatMessage({
                         </ReactMarkdown>
                       </div>
                     </div>
-                    <ExternalLink size={16} className="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity ml-2 flex-shrink-0 mt-1" />
+                    <ExternalLink size={15} className="text-indigo-300 opacity-0 group-hover:opacity-100 transition-opacity ml-2 flex-shrink-0 mt-1" />
                   </div>
                 </div>
               ))}
             </div>
           </div>
         )}
+
+        {showSqlWindow && sqlQuery && onSqlExecute && (
+          <SqlQueryWindow
+            query={sqlQuery}
+            onExecute={onSqlExecute}
+            onClose={() => setShowSqlWindow(false)}
+          />
+        )}
       </div>
+      
+      {/* Avatar for user messages */}
+      {sender === 'user' && (
+        <div className="claude-avatar user flex-shrink-0 ml-3">
+          <User className="text-white" size={18} />
+        </div>
+      )}
     </div>
   );
 } 
