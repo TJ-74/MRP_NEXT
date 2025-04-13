@@ -4,7 +4,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Search, Building2, Shield } from 'lucide-react';
-import Navbar from "@/components/NavBar";
 import { supabase } from '@/lib/supabase';
 
 // Types for our data
@@ -245,7 +244,7 @@ export default function HealthcareSearch() {
 
   return (
     <div className="min-h-screen bg-gray-900">
-       <Navbar />
+       
       <div className="max-w-4xl mx-auto p-4 py-12">
         {/* Search Form */}
         <Card className="mb-6 shadow-lg bg-gray-800 border-gray-700">

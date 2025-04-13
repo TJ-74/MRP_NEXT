@@ -3,12 +3,11 @@
 import Link from 'next/link';
 import { ArrowRight, Search, DollarSign, Building2, Shield, Star, CheckCircle2, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import Navbar from '@/components/NavBar';
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-gray-900">
-      <Navbar />
+ 
       
       {/* Hero Section with Gradient */}
       <section className="relative py-20 px-4 sm:px-6 lg:px-8 overflow-hidden">

@@ -3,7 +3,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Send, Loader2, X, Building2, Shield, BarChart } from 'lucide-react';
-import Navbar from '@/components/NavBar';
 import { ChatMessage } from '@/components/ChatMessage';
 import { supabase } from '@/lib/supabase';
 // import { Bot } from 'lucide-react';
@@ -391,7 +390,7 @@ export default function Chat() {
 
   return (
     <div className="min-h-screen claude-bg flex flex-col">
-      <Navbar />
+      
       
       <div className="flex flex-1 h-[calc(100vh-4rem)] relative overflow-hidden">
         {/* Main Chat Container */}

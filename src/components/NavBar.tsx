@@ -51,6 +51,9 @@ const Navbar = () => {
                   <Link href="/" className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
                     Home
                   </Link>
+                  <Link href="/dashboard" className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
+                    Dashboard
+                  </Link>
                   <Link href="/searchform" className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
                     Find Price
                   </Link>
@@ -102,6 +105,9 @@ const Navbar = () => {
             <div className="px-2 pt-2 pb-3 space-y-1">
               <Link href="/" className="text-gray-300 hover:text-white block px-3 py-2 rounded-md text-base font-medium">
                 Home
+              </Link>
+              <Link href="/dashboard" className="text-gray-300 hover:text-white block px-3 py-2 rounded-md text-base font-medium">
+                Dashboard
               </Link>
               <Link href="/searchform" className="text-gray-300 hover:text-white block px-3 py-2 rounded-md text-base font-medium">
                 Find Price
