@@ -404,3 +404,11 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
+# Node.js and Next.js
+node_modules/
+.next/
+out/
+.cache/
+dist/
+build/
