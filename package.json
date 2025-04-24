@@ -38,6 +38,7 @@
     "react-markdown": "^10.1.0",
     "recharts": "^2.15.2",
     "remark-gfm": "^4.0.1",
+    "stats.js": "^0.17.0",
     "tailwind-merge": "^3.0.2"
   },
   "devDependencies": {
@@ -48,6 +49,7 @@
     "@types/react": "^19",
     "@types/react-chartjs-2": "^2.0.2",
     "@types/react-dom": "^19",
+    "@types/stats.js": "^0.17.3",
     "@types/uuid": "^10.0.0",
     "autoprefixer": "^10.4.14",
     "eslint": "^9",

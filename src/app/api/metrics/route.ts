@@ -6,11 +6,222 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-// Simple time series forecasting function using moving average
-function forecastTimeSeries(data: Array<{date: string, cost: number}>, numPredictions: number = 3): Array<{date: string, cost: number, isPrediction: boolean}> {
+// Helper functions for statistical calculations
+function calculateMean(values: number[]): number {
+  return values.reduce((sum, val) => sum + val, 0) / values.length;
+}
+
+function calculateVariance(values: number[]): number {
+  const mean = calculateMean(values);
+  return values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / values.length;
+}
+
+function calculateStandardDeviation(values: number[]): number {
+  return Math.sqrt(calculateVariance(values));
+}
+
+// Interface for model metrics
+interface ModelMetrics {
+  mae: number;
+  mse: number;
+  rmse: number;
+  mape: number;
+  residuals: number[];
+  meanResidual: number;
+  stdDevResidual: number;
+  rSquared: number;
+}
+
+// Interface for model results
+interface ModelResult {
+  predictions: Array<{date: string; cost: number; isPrediction: boolean}>;
+  metrics: ModelMetrics;
+  modelName: string;
+}
+
+// Simple Moving Average (SMA) model
+function simpleMovingAverage(data: Array<{date: string; cost: number}>, window: number = 3, numPredictions: number = 12): ModelResult {
+  const costs = data.map(d => d.cost);
+  const fittedValues: number[] = [];
+  const residuals: number[] = [];
+
+  // Calculate moving averages
+  for (let i = window; i < costs.length; i++) {
+    const windowSlice = costs.slice(i - window, i);
+    const prediction = calculateMean(windowSlice);
+    fittedValues.push(prediction);
+    residuals.push(costs[i] - prediction);
+  }
+
+  // Generate future predictions
+  const lastWindow = costs.slice(-window);
+  const prediction = calculateMean(lastWindow);
+  const predictions = [];
+  const lastDate = new Date(data[data.length - 1].date);
+
+  // Historical data
+  for (let i = 0; i < data.length; i++) {
+    predictions.push({
+      date: data[i].date,
+      cost: i >= window ? fittedValues[i - window] : data[i].cost,
+      isPrediction: false
+    });
+  }
+
+  // Future predictions
+  for (let i = 1; i <= numPredictions; i++) {
+    const nextDate = new Date(lastDate);
+    nextDate.setMonth(nextDate.getMonth() + i);
+    predictions.push({
+      date: nextDate.toISOString().split('T')[0],
+      cost: prediction,
+      isPrediction: true
+    });
+  }
+
+  // Calculate metrics
+  const metrics = calculateMetrics(costs.slice(window), fittedValues, residuals);
+
+  return {
+    predictions,
+    metrics,
+    modelName: 'Simple Moving Average (SMA)'
+  };
+}
+
+// Simple Exponential Smoothing (SES) model
+function simpleExponentialSmoothing(data: Array<{date: string; cost: number}>, alpha: number = 0.3, numPredictions: number = 12): ModelResult {
+  const costs = data.map(d => d.cost);
+  const fittedValues: number[] = [costs[0]];
+  const residuals: number[] = [];
+
+  // Calculate exponential smoothing
+  for (let i = 1; i < costs.length; i++) {
+    const prediction = alpha * costs[i - 1] + (1 - alpha) * fittedValues[i - 1];
+    fittedValues.push(prediction);
+    residuals.push(costs[i] - prediction);
+  }
+
+  // Generate predictions
+  const predictions = [];
+  const lastDate = new Date(data[data.length - 1].date);
+  const lastPrediction = fittedValues[fittedValues.length - 1];
+
+  // Historical data
+  for (let i = 0; i < data.length; i++) {
+    predictions.push({
+      date: data[i].date,
+      cost: fittedValues[i],
+      isPrediction: false
+    });
+  }
+
+  // Future predictions
+  for (let i = 1; i <= numPredictions; i++) {
+    const nextDate = new Date(lastDate);
+    nextDate.setMonth(nextDate.getMonth() + i);
+    predictions.push({
+      date: nextDate.toISOString().split('T')[0],
+      cost: lastPrediction,
+      isPrediction: true
+    });
+  }
+
+  // Calculate metrics
+  const metrics = calculateMetrics(costs.slice(1), fittedValues.slice(1), residuals);
+
+  return {
+    predictions,
+    metrics,
+    modelName: 'Simple Exponential Smoothing (SES)'
+  };
+}
+
+// Calculate model evaluation metrics
+function calculateMetrics(actual: number[], predicted: number[], residuals: number[]): ModelMetrics {
+  const mae = calculateMean(residuals.map(r => Math.abs(r)));
+  const mse = calculateMean(residuals.map(r => r * r));
+  const rmse = Math.sqrt(mse);
+  const mape = calculateMean(residuals.map((r, i) => Math.abs(r / actual[i]) * 100));
+  const meanResidual = calculateMean(residuals);
+  const stdDevResidual = calculateStandardDeviation(residuals);
+
+  // Calculate R-squared
+  const totalSumOfSquares = calculateVariance(actual) * (actual.length);
+  const residualSumOfSquares = residuals.reduce((sum, r) => sum + r * r, 0);
+  const rSquared = 1 - (residualSumOfSquares / totalSumOfSquares);
+
+  return {
+    mae,
+    mse,
+    rmse,
+    mape,
+    residuals,
+    meanResidual,
+    stdDevResidual,
+    rSquared
+  };
+}
+
+// Model selection function
+function selectBestModel(data: Array<{date: string; cost: number}>, numPredictions: number = 12): ModelResult {
+  // Generate predictions using different models
+  const etsResult = forecastTimeSeries(data, numPredictions);
+  const smaResult = simpleMovingAverage(data, 3, numPredictions);
+  const sesResult = simpleExponentialSmoothing(data, 0.3, numPredictions);
+
+  // Compare models based on multiple criteria
+  const models = [
+    { ...etsResult, modelName: 'ETS (Error, Trend, Seasonality)' },
+    smaResult,
+    sesResult
+  ];
+
+  // Calculate a composite score for each model
+  // Lower score is better
+  const modelScores = models.map(model => ({
+    model,
+    score: (
+      model.metrics.mape * 0.4 +  // Weight MAPE more heavily
+      (1 - model.metrics.rSquared) * 0.3 +  // R-squared (inverted as we want to minimize)
+      (model.metrics.rmse / 1000) * 0.3  // Normalized RMSE
+    )
+  }));
+
+  // Sort by score (ascending)
+  modelScores.sort((a, b) => a.score - b.score);
+
+  // Log model comparison
+  console.log('Model Comparison:');
+  modelScores.forEach(({ model, score }) => {
+    console.log(`\n${model.modelName}:`);
+    console.log(`Score: ${score.toFixed(4)}`);
+    console.log(`MAPE: ${model.metrics.mape.toFixed(2)}%`);
+    console.log(`R-squared: ${model.metrics.rSquared.toFixed(4)}`);
+    console.log(`RMSE: $${model.metrics.rmse.toFixed(2)}`);
+  });
+
+  return modelScores[0].model;
+}
+
+// Original ETS model implementation
+function forecastTimeSeries(data: Array<{date: string, cost: number}>, numPredictions: number = 12): ModelResult {
   if (!data || data.length < 4) {
     console.log('Not enough data for forecasting');
-    return data.map(d => ({ ...d, isPrediction: false }));
+    return {
+      predictions: data.map(d => ({ ...d, isPrediction: false })),
+      metrics: {
+        mae: 0,
+        mse: 0,
+        rmse: 0,
+        mape: 0,
+        residuals: [],
+        meanResidual: 0,
+        stdDevResidual: 0,
+        rSquared: 0
+      },
+      modelName: 'ETS (Error, Trend, Seasonality)'
+    };
   }
   
   // Sort data by date
@@ -37,55 +248,106 @@ function forecastTimeSeries(data: Array<{date: string, cost: number}>, numPredic
   // Not enough monthly data points
   if (monthlyAvg.length < 3) {
     console.log('Not enough monthly data for forecasting');
-    return data.map(d => ({ ...d, isPrediction: false }));
+    return {
+      predictions: data.map(d => ({ ...d, isPrediction: false })),
+      metrics: {
+        mae: 0,
+        mse: 0,
+        rmse: 0,
+        mape: 0,
+        residuals: [],
+        meanResidual: 0,
+        stdDevResidual: 0,
+        rSquared: 0
+      },
+      modelName: 'ETS (Error, Trend, Seasonality)'
+    };
+  }
+
+  // Extract costs for analysis
+  const costs = monthlyAvg.map(item => item.cost);
+  
+  // Calculate level (L), trend (T), and seasonality (S) components
+  const alpha = 0.3; // Level smoothing factor
+  const beta = 0.2;  // Trend smoothing factor
+  const gamma = 0.1; // Seasonality smoothing factor
+  const m = 12;      // Seasonality period (monthly data)
+  
+  // Initialize components
+  let level = costs[0];
+  let trend = (costs[1] - costs[0]) / 2;
+  const seasonals: number[] = Array(m).fill(0);
+  
+  // Calculate initial seasonals
+  for (let i = 0; i < m; i++) {
+    seasonals[i] = costs[i] / costs.slice(0, m).reduce((a, b) => a + b, 0) * m;
   }
   
-  // Calculate trend using simple linear regression
-  // y = mx + b
-  let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
-  const n = monthlyAvg.length;
+  // Store fitted values for evaluation
+  const fittedValues: number[] = [];
+  const residuals: number[] = [];
   
-  for (let i = 0; i < n; i++) {
-    const x = i;
-    const y = monthlyAvg[i].cost;
+  // ETS model fitting
+  for (let i = m; i < costs.length; i++) {
+    const prevLevel = level;
+    level = alpha * (costs[i] / seasonals[i % m]) + (1 - alpha) * (level + trend);
+    trend = beta * (level - prevLevel) + (1 - beta) * trend;
+    seasonals[i % m] = gamma * (costs[i] / level) + (1 - gamma) * seasonals[i % m];
     
-    sumX += x;
-    sumY += y;
-    sumXY += x * y;
-    sumX2 += x * x;
+    // Calculate fitted value and residual
+    const fittedValue = (level + trend) * seasonals[i % m];
+    fittedValues.push(fittedValue);
+    residuals.push(costs[i] - fittedValue);
   }
   
-  const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
-  const intercept = (sumY - slope * sumX) / n;
+  // Calculate evaluation metrics
+  const mae = calculateMean(residuals.map(r => Math.abs(r)));
+  const mse = calculateMean(residuals.map(r => r * r));
+  const rmse = Math.sqrt(mse);
+  const mape = calculateMean(residuals.map((r, i) => Math.abs(r / costs[i + m]) * 100));
+  const meanResidual = calculateMean(residuals);
+  const stdDevResidual = calculateStandardDeviation(residuals);
   
-  console.log(`Forecasting model: cost = ${slope.toFixed(2)} * month + ${intercept.toFixed(2)}`);
+  // Calculate R-squared
+  const totalSumOfSquares = calculateVariance(costs.slice(m)) * (costs.length - m);
+  const residualSumOfSquares = residuals.reduce((sum, r) => sum + r * r, 0);
+  const rSquared = 1 - (residualSumOfSquares / totalSumOfSquares);
   
-  // Make predictions for the next n months
-  const result = data.map(d => ({ ...d, isPrediction: false }));
+  // Generate predictions
+  const predictions: Array<{date: string, cost: number, isPrediction: boolean}> = [];
   const lastDate = new Date(monthlyAvg[monthlyAvg.length - 1].date);
   
   for (let i = 1; i <= numPredictions; i++) {
-    const nextMonth = new Date(lastDate);
-    nextMonth.setMonth(lastDate.getMonth() + i);
+    const nextDate = new Date(lastDate);
+    nextDate.setMonth(nextDate.getMonth() + i);
     
-    const predictedValue = slope * (n + i - 1) + intercept;
+    const prediction = (level + i * trend) * seasonals[(monthlyAvg.length + i - 1) % m];
     
-    // Apply some randomness within a range of ±5% to make it more realistic
-    const randomFactor = 1 + (Math.random() * 0.1 - 0.05);
-    const predictedCost = predictedValue * randomFactor;
-    
-    const predictedDate = nextMonth.toISOString().split('T')[0];
-    
-    console.log(`Predicted cost for ${predictedDate}: $${predictedCost.toFixed(2)}`);
-    
-    result.push({
-      date: predictedDate,
-      cost: predictedCost,
+    predictions.push({
+      date: nextDate.toISOString().split('T')[0],
+      cost: prediction,
       isPrediction: true
     });
   }
   
-  return result;
+  // Combine historical data with predictions
+  return {
+    predictions: [
+      ...monthlyAvg.map(item => ({ ...item, isPrediction: false })),
+      ...predictions
+    ],
+    metrics: {
+      mae,
+      mse,
+      rmse,
+      mape,
+      residuals,
+      meanResidual,
+      stdDevResidual,
+      rSquared
+    },
+    modelName: 'ETS (Error, Trend, Seasonality)'
+  };
 }
 
 export async function GET(request: Request) {
@@ -223,13 +485,27 @@ export async function GET(request: Request) {
       console.log('No procedure data available for chart');
     }
     
-    // Generate forecasted data
-    console.log('Generating forecasts...');
-    const forecastedData = forecastTimeSeries(timeSeriesData, 3);
+    // Generate forecasted data using model selection
+    console.log('Selecting best forecasting model...');
+    const bestModel = selectBestModel(timeSeriesData, 12);
+    console.log(`Selected model: ${bestModel.modelName}`);
+    
+    const forecastedData = bestModel.predictions;
     const predictionsOnly = forecastedData.filter(d => d.isPrediction);
-    console.log(`Generated ${predictionsOnly.length} predictions`);
+    console.log(`Generated ${predictionsOnly.length} predictions using ${bestModel.modelName}`);
+    
     if (predictionsOnly.length > 0) {
       console.log('Predictions:', predictionsOnly);
+      console.log('Model Evaluation Metrics:', {
+        'Model': bestModel.modelName,
+        'Mean Absolute Error (MAE)': bestModel.metrics.mae.toFixed(2),
+        'Mean Squared Error (MSE)': bestModel.metrics.mse.toFixed(2),
+        'Root Mean Squared Error (RMSE)': bestModel.metrics.rmse.toFixed(2),
+        'Mean Absolute Percentage Error (MAPE)': bestModel.metrics.mape.toFixed(2) + '%',
+        'R-squared': bestModel.metrics.rSquared.toFixed(4),
+        'Mean Residual': bestModel.metrics.meanResidual.toFixed(2),
+        'Standard Deviation of Residuals': bestModel.metrics.stdDevResidual.toFixed(2)
+      });
     }
     
     // Now, fetch organization data for the cost breakdown table
@@ -496,7 +772,11 @@ export async function GET(request: Request) {
         avgTotalClaimCost
       },
       chartData: forecastedData,
-      tableData: organizationTableData
+      tableData: organizationTableData,
+      modelMetrics: {
+        ...bestModel.metrics,
+        modelName: bestModel.modelName
+      }
     });
     
   } catch (error: unknown) {

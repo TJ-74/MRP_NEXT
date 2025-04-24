@@ -9,6 +9,9 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from "@/components/ui/button";
 import React from 'react';
+import { AIInsightsDialog } from "@/components/ai-insights-dialog";
+import { FacilityInsightsDialog } from "@/components/facility-insights-dialog";
+import { InsuranceInsightsDialog } from "@/components/insurance-insights-dialog";
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -389,48 +392,6 @@ export default function DashboardPage() {
     return null;
   };
 
- 
-
- 
-
-  // // Update function parameter types
-  // interface ProcedureAnalysisProps {
-  //   data: {
-  //     organization: string;
-  //     baseCost: number;
-  //     totalClaim: number;
-  //     payerCoverage: number;
-  //     outOfPocket: number;
-  //     payer: string;
-  //   }[];
-  // }
-  
-
-
-  // ... existing code ...
-
-  // interface PayerInsightProps {
-  //   data: {
-  //     name: string;
-  //     value: number;
-  //     color?: string;
-  //   }[];
-  // }
-  
-
-
-
-  // interface InsuranceCoverageProps {
-  //   data: {
-  //     name: string;
-  //     value: number;
-  //     fill?: string;
-  //   }[];
-  // }
-  
-
-  // ... existing code ...
-
   return (
     <div className="flex-1 space-y-4 p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
@@ -592,8 +553,15 @@ export default function DashboardPage() {
 
           {/* Cost Trend Chart */}
           <Card>
-              <CardHeader>
-              <CardTitle className="text-lg">Procedure Cost Trend Over Time</CardTitle>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg">Procedure Cost Trend Over Time</CardTitle>
+                <AIInsightsDialog 
+                  chartData={chartData}
+                  modelMetrics={metrics}
+                  procedureName={selectedProcedure || 'All Procedures'}
+                />
+              </div>
               {chartDataMonthly.length > 0 && (
                 <div className="text-sm text-gray-400 flex items-center mt-1">
                   <div className="flex items-center mr-4">
@@ -606,8 +574,8 @@ export default function DashboardPage() {
                   </div>
                 </div>
               )}
-              </CardHeader>
-              <CardContent>
+            </CardHeader>
+            <CardContent>
               <div className="h-[300px] w-full">
                 {chartDataMonthly.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
@@ -663,382 +631,356 @@ export default function DashboardPage() {
                   </div>
                 )}
               </div>
-              </CardContent>
-            </Card>
+            </CardContent>
+          </Card>
             
-            {/* Cost Breakdown Table */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Cost Breakdown by Organization</CardTitle>
-                <p className="text-sm text-gray-400">Filter by &quot;base cost&quot; to find the best value for your procedure</p>
-              </CardHeader>
-              <CardContent>
-                <div className="border rounded-md overflow-hidden">
-                  <div className="max-h-[350px] overflow-y-auto">
-                    <Table>
-                      <TableHeader className="sticky top-0 bg-gray-800 z-10">
-                        <TableRow>
-                          <TableHead 
-                            className="w-[250px] cursor-pointer hover:bg-gray-700/50"
-                            onClick={() => {
-                              if (sortField === "organization") {
-                                setSortDirection(sortDirection === "asc" ? "desc" : "asc");
-                              } else {
-                                setSortField("organization");
-                                setSortDirection("asc");
-                              }
-                            }}
-                          >
-                            Organization
-                            {sortField === "organization" && (
-                              <span className="ml-1">{sortDirection === "asc" ? "↑" : "↓"}</span>
-                            )}
-                          </TableHead>
-                          <TableHead 
-                            className="cursor-pointer hover:bg-gray-700/50"
-                            onClick={() => {
-                              if (sortField === "payer") {
-                                setSortDirection(sortDirection === "asc" ? "desc" : "asc");
-                              } else {
-                                setSortField("payer");
-                                setSortDirection("asc");
-                              }
-                            }}
-                          >
-                            Primary Payer
-                            {sortField === "payer" && (
-                              <span className="ml-1">{sortDirection === "asc" ? "↑" : "↓"}</span>
-                            )}
-                          </TableHead>
-                          <TableHead 
-                            className="text-right cursor-pointer hover:bg-gray-700/50"
-                            onClick={() => {
-                              if (sortField === "baseCost") {
-                                setSortDirection(sortDirection === "asc" ? "desc" : "asc");
-                              } else {
-                                setSortField("baseCost");
-                                setSortDirection("asc");
-                              }
-                            }}
-                          >
-                            Base Cost
-                            {sortField === "baseCost" && (
-                              <span className="ml-1">{sortDirection === "asc" ? "↑" : "↓"}</span>
-                            )}
-                          </TableHead>
-                          <TableHead 
-                            className="text-right cursor-pointer hover:bg-gray-700/50"
-                            onClick={() => {
-                              if (sortField === "totalClaim") {
-                                setSortDirection(sortDirection === "asc" ? "desc" : "asc");
-                              } else {
-                                setSortField("totalClaim");
-                                setSortDirection("asc");
-                              }
-                            }}
-                          >
-                            Total Claim
-                            {sortField === "totalClaim" && (
-                              <span className="ml-1">{sortDirection === "asc" ? "↑" : "↓"}</span>
-                            )}
-                          </TableHead>
-                          <TableHead 
-                            className="text-right cursor-pointer hover:bg-gray-700/50"
-                            onClick={() => {
-                              if (sortField === "payerCoverage") {
-                                setSortDirection(sortDirection === "asc" ? "desc" : "asc");
-                              } else {
-                                setSortField("payerCoverage");
-                                setSortDirection("asc");
-                              }
-                            }}
-                          >
-                            Payer Coverage
-                            {sortField === "payerCoverage" && (
-                              <span className="ml-1">{sortDirection === "asc" ? "↑" : "↓"}</span>
-                            )}
-                          </TableHead>
-                          <TableHead 
-                            className="text-right cursor-pointer hover:bg-gray-700/50"
-                            onClick={() => {
-                              if (sortField === "outOfPocket") {
-                                setSortDirection(sortDirection === "asc" ? "desc" : "asc");
-                              } else {
-                                setSortField("outOfPocket");
-                                setSortDirection("asc");
-                              }
-                            }}
-                          >
-                            Out of Pocket
-                            {sortField === "outOfPocket" && (
-                              <span className="ml-1">{sortDirection === "asc" ? "↑" : "↓"}</span>
-                            )}
-                          </TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {tableData.length > 0 ? (
-                          // Sort the table data based on current sort field and direction
-                          [...tableData]
-                            .sort((a, b) => {
-                              // Handle string sorting for organization and payer fields
-                              if (sortField === "organization" || sortField === "payer") {
-                                const aVal = a[sortField as keyof typeof a] as string;
-                                const bVal = b[sortField as keyof typeof b] as string;
-                                return sortDirection === "asc" 
-                                  ? aVal.localeCompare(bVal)
-                                  : bVal.localeCompare(aVal);
-                              }
-                              
-                              // Handle numeric sorting for all other fields
-                              const aValue = a[sortField as keyof typeof a] as number;
-                              const bValue = b[sortField as keyof typeof b] as number;
-                              
+          {/* Cost Breakdown Table */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Cost Breakdown by Organization</CardTitle>
+              <p className="text-sm text-gray-400">Filter by &quot;base cost&quot; to find the best value for your procedure</p>
+            </CardHeader>
+            <CardContent>
+              <div className="border rounded-md overflow-hidden">
+                <div className="max-h-[350px] overflow-y-auto">
+                  <Table>
+                    <TableHeader className="sticky top-0 bg-gray-800 z-10">
+                      <TableRow>
+                        <TableHead 
+                          className="w-[250px] cursor-pointer hover:bg-gray-700/50"
+                          onClick={() => {
+                            if (sortField === "organization") {
+                              setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+                            } else {
+                              setSortField("organization");
+                              setSortDirection("asc");
+                            }
+                          }}
+                        >
+                          Organization
+                          {sortField === "organization" && (
+                            <span className="ml-1">{sortDirection === "asc" ? "↑" : "↓"}</span>
+                          )}
+                        </TableHead>
+                        <TableHead 
+                          className="cursor-pointer hover:bg-gray-700/50"
+                          onClick={() => {
+                            if (sortField === "payer") {
+                              setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+                            } else {
+                              setSortField("payer");
+                              setSortDirection("asc");
+                            }
+                          }}
+                        >
+                          Primary Payer
+                          {sortField === "payer" && (
+                            <span className="ml-1">{sortDirection === "asc" ? "↑" : "↓"}</span>
+                          )}
+                        </TableHead>
+                        <TableHead 
+                          className="text-right cursor-pointer hover:bg-gray-700/50"
+                          onClick={() => {
+                            if (sortField === "baseCost") {
+                              setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+                            } else {
+                              setSortField("baseCost");
+                              setSortDirection("asc");
+                            }
+                          }}
+                        >
+                          Base Cost
+                          {sortField === "baseCost" && (
+                            <span className="ml-1">{sortDirection === "asc" ? "↑" : "↓"}</span>
+                          )}
+                        </TableHead>
+                        <TableHead 
+                          className="text-right cursor-pointer hover:bg-gray-700/50"
+                          onClick={() => {
+                            if (sortField === "totalClaim") {
+                              setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+                            } else {
+                              setSortField("totalClaim");
+                              setSortDirection("asc");
+                            }
+                          }}
+                        >
+                          Total Claim
+                          {sortField === "totalClaim" && (
+                            <span className="ml-1">{sortDirection === "asc" ? "↑" : "↓"}</span>
+                          )}
+                        </TableHead>
+                        <TableHead 
+                          className="text-right cursor-pointer hover:bg-gray-700/50"
+                          onClick={() => {
+                            if (sortField === "payerCoverage") {
+                              setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+                            } else {
+                              setSortField("payerCoverage");
+                              setSortDirection("asc");
+                            }
+                          }}
+                        >
+                          Payer Coverage
+                          {sortField === "payerCoverage" && (
+                            <span className="ml-1">{sortDirection === "asc" ? "↑" : "↓"}</span>
+                          )}
+                        </TableHead>
+                        <TableHead 
+                          className="text-right cursor-pointer hover:bg-gray-700/50"
+                          onClick={() => {
+                            if (sortField === "outOfPocket") {
+                              setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+                            } else {
+                              setSortField("outOfPocket");
+                              setSortDirection("asc");
+                            }
+                          }}
+                        >
+                          Out of Pocket
+                          {sortField === "outOfPocket" && (
+                            <span className="ml-1">{sortDirection === "asc" ? "↑" : "↓"}</span>
+                          )}
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {tableData.length > 0 ? (
+                        // Sort the table data based on current sort field and direction
+                        [...tableData]
+                          .sort((a, b) => {
+                            // Handle string sorting for organization and payer fields
+                            if (sortField === "organization" || sortField === "payer") {
+                              const aVal = a[sortField as keyof typeof a] as string;
+                              const bVal = b[sortField as keyof typeof b] as string;
                               return sortDirection === "asc" 
-                                ? aValue - bValue 
-                                : bValue - aValue;
-                            })
-                            .map((row, index) => (
-                              <React.Fragment key={`row-${index}`}>
-                                <TableRow 
-                                  className={`cursor-pointer ${expandedRows[index] ? 'bg-gray-700' : ''} hover:bg-gray-700/50`}
-                                  onClick={() => toggleRowExpansion(index)}
-                                >
-                                  <TableCell className="font-medium">
-                                    <div className="flex items-center">
-                                      <span className="mr-2">{expandedRows[index] ? '▼' : '▶'}</span>
-                                      {row.organization}
+                                ? aVal.localeCompare(bVal)
+                                : bVal.localeCompare(aVal);
+                            }
+                            
+                            // Handle numeric sorting for all other fields
+                            const aValue = a[sortField as keyof typeof a] as number;
+                            const bValue = b[sortField as keyof typeof b] as number;
+                            
+                            return sortDirection === "asc" 
+                              ? aValue - bValue 
+                              : bValue - aValue;
+                          })
+                          .map((row, index) => (
+                            <React.Fragment key={`row-${index}`}>
+                              <TableRow 
+                                className={`cursor-pointer ${expandedRows[index] ? 'bg-gray-700' : ''} hover:bg-gray-700/50`}
+                                onClick={() => toggleRowExpansion(index)}
+                              >
+                                <TableCell className="font-medium">
+                                  <div className="flex items-center">
+                                    <span className="mr-2">{expandedRows[index] ? '▼' : '▶'}</span>
+                                    {row.organization}
+                                  </div>
+                                </TableCell>
+                                <TableCell>{row.payer || 'Unknown'}</TableCell>
+                                <TableCell className="text-right">${row.baseCost.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</TableCell>
+                                <TableCell className="text-right">${row.totalClaim.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</TableCell>
+                                <TableCell className="text-right">${row.payerCoverage.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</TableCell>
+                                <TableCell className="text-right">${row.outOfPocket.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</TableCell>
+                              </TableRow>
+                              {expandedRows[index] && (
+                                <TableRow className="bg-gray-700/40">
+                                  <TableCell colSpan={6} className="p-0">
+                                    <div className="p-4 space-y-4">
+                                      <div className="flex justify-between items-center">
+                                        <h4 className="text-sm font-semibold text-blue-400">
+                                          Additional Procedures at {row.organization} for this Patient
+                                        </h4>
+                                        <div className="text-xs text-gray-400">
+                                          Patient ID: {row.patientId || 'Unknown'} | Encounter ID: {row.encounterId || 'Unknown'}
+                                        </div>
+                                      </div>
+                                      
+                                      {row.additionalProcedures && row.additionalProcedures.length > 0 ? (
+                                        <div className="border border-gray-600 rounded overflow-hidden">
+                                          <table className="w-full text-sm">
+                                            <thead className="bg-gray-800">
+                                              <tr>
+                                                <th className="py-2 px-3 text-left">Procedure</th>
+                                                <th className="py-2 px-3 text-right">Date</th>
+                                                <th className="py-2 px-3 text-right">Base Cost</th>
+                                              </tr>
+                                            </thead>
+                                            <tbody>
+                                              {/* Sort procedures by date (newest first) and ensure we have no duplicates */}
+                                              {row.additionalProcedures
+                                                .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                                                .map((proc, i) => (
+                                                  <tr key={i} className="border-t border-gray-700">
+                                                    <td className="py-2 px-3">{proc.description}</td>
+                                                    <td className="py-2 px-3 text-right">{new Date(proc.date).toLocaleDateString()}</td>
+                                                    <td className="py-2 px-3 text-right">${proc.baseCost.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                                                  </tr>
+                                                ))}
+                                            </tbody>
+                                          </table>
+                                        </div>
+                                      ) : (
+                                        <div className="py-4 text-center text-gray-400">
+                                          {loading ? (
+                                            <div className="flex justify-center items-center">
+                                              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                              <span>Loading additional procedures...</span>
+                                            </div>
+                                          ) : (
+                                            "No additional procedures found for this patient"
+                                          )}
+                                        </div>
+                                      )}
                                     </div>
                                   </TableCell>
-                                  <TableCell>{row.payer || 'Unknown'}</TableCell>
-                                  <TableCell className="text-right">${row.baseCost.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</TableCell>
-                                  <TableCell className="text-right">${row.totalClaim.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</TableCell>
-                                  <TableCell className="text-right">${row.payerCoverage.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</TableCell>
-                                  <TableCell className="text-right">${row.outOfPocket.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</TableCell>
                                 </TableRow>
-                                {expandedRows[index] && (
-                                  <TableRow className="bg-gray-700/40">
-                                    <TableCell colSpan={6} className="p-0">
-                                      <div className="p-4 space-y-4">
-                                        <div className="flex justify-between items-center">
-                                          <h4 className="text-sm font-semibold text-blue-400">
-                                            Additional Procedures at {row.organization} for this Patient
-                                          </h4>
-                                          <div className="text-xs text-gray-400">
-                                            Patient ID: {row.patientId || 'Unknown'} | Encounter ID: {row.encounterId || 'Unknown'}
-                                          </div>
-                                        </div>
-                                        
-                                        {row.additionalProcedures && row.additionalProcedures.length > 0 ? (
-                                          <div className="border border-gray-600 rounded overflow-hidden">
-                                            <table className="w-full text-sm">
-                                              <thead className="bg-gray-800">
-                                                <tr>
-                                                  <th className="py-2 px-3 text-left">Procedure</th>
-                                                  <th className="py-2 px-3 text-right">Date</th>
-                                                  <th className="py-2 px-3 text-right">Base Cost</th>
-                                                </tr>
-                                              </thead>
-                                              <tbody>
-                                                {/* Sort procedures by date (newest first) and ensure we have no duplicates */}
-                                                {row.additionalProcedures
-                                                  .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                                                  .map((proc, i) => (
-                                                    <tr key={i} className="border-t border-gray-700">
-                                                      <td className="py-2 px-3">{proc.description}</td>
-                                                      <td className="py-2 px-3 text-right">{new Date(proc.date).toLocaleDateString()}</td>
-                                                      <td className="py-2 px-3 text-right">${proc.baseCost.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                                                    </tr>
-                                                  ))}
-                                              </tbody>
-                                            </table>
-                                          </div>
-                                        ) : (
-                                          <div className="py-4 text-center text-gray-400">
-                                            {loading ? (
-                                              <div className="flex justify-center items-center">
-                                                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                                                <span>Loading additional procedures...</span>
-                                              </div>
-                                            ) : (
-                                              "No additional procedures found for this patient"
-                                            )}
-                                          </div>
-                                        )}
-                                      </div>
-                                    </TableCell>
-                                  </TableRow>
-                                )}
-                              </React.Fragment>
-                            ))
-                        ) : (
-                          <TableRow>
-                            <TableCell colSpan={6} className="text-center py-4 text-gray-500">
-                              {loading ? (
-                                <div className="flex justify-center items-center">
-                                  <Loader2 className="h-5 w-5 animate-spin mr-2" />
-                                  <span>Loading organization data...</span>
-                                </div>
-                              ) : (
-                                "No organization data available for the selected procedure"
                               )}
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
+                            </React.Fragment>
+                          ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center py-4 text-gray-500">
+                            {loading ? (
+                              <div className="flex justify-center items-center">
+                                <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                                <span>Loading organization data...</span>
+                              </div>
+                            ) : (
+                              "No organization data available for the selected procedure"
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </CardContent>
+          </Card>
 
-            {/* Cost Comparison Bar Chart */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Cost Comparison Across Facilities</CardTitle>
-                <p className="text-sm text-gray-400">Top 5 facilities with lowest base cost for {selectedProcedure || 'procedures'}</p>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[400px] w-full">
-                  {tableData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart
-                        data={tableData
-                          .sort((a, b) => a.baseCost - b.baseCost)
-                          .slice(0, 5)
-                          .map((item, index) => ({
-                            name: `Facility ${index + 1}`,
-                            organization: item.organization,
-                            baseCost: item.baseCost,
-                            additionalCosts: item.totalClaim - item.baseCost,
-                          }))}
-                        margin={{ top: 20, right: 30, left: 60, bottom: 60 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-                        <XAxis 
-                          dataKey="name"
-                          tick={{ fill: '#888', fontSize: 12 }}
-                        />
-                        <YAxis 
-                          tickFormatter={(value) => `$${value}`}
-                          tick={{ fill: '#888' }}
-                        />
-                        <Tooltip 
-                          formatter={(value: number, name: string) => {
-                            if (name === 'baseCost') return [`$${value.toFixed(2)}`, 'Base Cost'];
-                            if (name === 'additionalCosts') return [`$${value.toFixed(2)}`, 'Additional Costs'];
-                            return [value, name];
-                          }}
-                          labelFormatter={(label, payload) => {
-                            if (payload && payload.length > 0) {
-                              return payload[0].payload.organization;
-                            }
-                            return label;
-                          }}
-                          contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151', borderRadius: '0.5rem' }}
-                          labelStyle={{ color: '#F3F4F6' }}
-                        />
-                        <Legend />
-                        <Bar dataKey="baseCost" name="Base Cost" stackId="a" fill="#8884d8" />
-                        <Bar dataKey="additionalCosts" name="Additional Costs" stackId="a" fill="#82ca9d" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  ) : (
-                    <div className="flex items-center justify-center h-full text-gray-500">
-                      No cost data available for comparison
-                    </div>
-                  )}
+          {/* Cost Comparison Bar Chart */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg">Cost Comparison Across Facilities</CardTitle>
+                  <p className="text-sm text-gray-400">Top 5 facilities with lowest base cost for {selectedProcedure || 'procedures'}</p>
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* Insurance Coverage Comparison */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Insurance Coverage Comparison</CardTitle>
-                <p className="text-sm text-gray-400">Coverage vs. out-of-pocket across different insurers</p>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[400px] w-full">
-                  {tableData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart
-                        data={tableData.reduce((result: { name: string; count: number; totalClaim: number; payerCoverage: number; outOfPocket: number; }[], item: { payer: string; totalClaim: number; payerCoverage: number; outOfPocket: number; }) => {
-                          // Check if this payer is already in the result
-                          const existingPayer = result.find(p => p.name === item.payer);
-                          
-                          if (existingPayer) {
-                            // Update existing payer data
-                            existingPayer.count += 1;
-                            existingPayer.totalClaim += item.totalClaim;
-                            existingPayer.payerCoverage += item.payerCoverage;
-                            existingPayer.outOfPocket += item.outOfPocket;
-                          } else {
-                            // Add new payer data
-                            result.push({
-                              name: item.payer,
-                              count: 1,
-                              totalClaim: item.totalClaim,
-                              payerCoverage: item.payerCoverage,
-                              outOfPocket: item.outOfPocket
-                            });
+                <FacilityInsightsDialog 
+                  facilityData={tableData
+                    .sort((a, b) => a.baseCost - b.baseCost)
+                    .slice(0, 5)
+                    .map((item) => ({
+                      name: item.organization,
+                      baseCost: item.baseCost,
+                      totalClaim: item.totalClaim,
+                      additionalCosts: item.totalClaim - item.baseCost,
+                      payerCoverage: item.payerCoverage,
+                      outOfPocket: item.outOfPocket,
+                      payer: item.payer
+                    }))}
+                  procedureName={selectedProcedure || 'All Procedures'}
+                />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[400px] w-full">
+                {tableData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={tableData
+                        .sort((a, b) => a.baseCost - b.baseCost)
+                        .slice(0, 5)
+                        .map((item, index) => ({
+                          name: `Facility ${index + 1}`,
+                          organization: item.organization,
+                          baseCost: item.baseCost,
+                          additionalCosts: item.totalClaim - item.baseCost,
+                        }))}
+                      margin={{ top: 20, right: 30, left: 60, bottom: 60 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+                      <XAxis 
+                        dataKey="name"
+                        tick={{ fill: '#888', fontSize: 12 }}
+                      />
+                      <YAxis 
+                        tickFormatter={(value) => `$${value}`}
+                        tick={{ fill: '#888' }}
+                      />
+                      <Tooltip 
+                        formatter={(value: number, name: string) => {
+                          if (name === 'baseCost') return [`$${value.toFixed(2)}`, 'Base Cost'];
+                          if (name === 'additionalCosts') return [`$${value.toFixed(2)}`, 'Additional Costs'];
+                          return [value, name];
+                        }}
+                        labelFormatter={(label, payload) => {
+                          if (payload && payload.length > 0) {
+                            return payload[0].payload.organization;
                           }
-                          return result;
-                        }, []).map(item => ({
-                          ...item,
-                          value: item.totalClaim,
-                          avgValue: item.totalClaim / item.count,
-                          efficiency: (item.payerCoverage / item.totalClaim) * 100
-                        })).sort((a, b) => b.value - a.value)}
-                        margin={{ top: 20, right: 30, left: 60, bottom: 60 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-                        <XAxis 
-                          dataKey="name" 
-                          tick={{ fill: '#888', fontSize: 12 }}
-                        />
-                        <YAxis 
-                          tickFormatter={(value) => `$${value}`}
-                          tick={{ fill: '#888' }}
-                        />
-                        <Tooltip 
-                          formatter={(value: number, name: string) => {
-                            if (name === 'value') return [`$${value.toLocaleString()}`, 'Total Claim'];
-                            if (name === 'efficiency') return [`${value.toFixed(1)}%`, 'Coverage Efficiency'];
-                            return [value, name];
-                          }}
-                          contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151', borderRadius: '0.5rem' }}
-                          labelStyle={{ color: '#F3F4F6' }}
-                        />
-                        <Legend 
-                          formatter={(value) => {
-                            return <span style={{ color: '#F3F4F6' }}>{value}</span>;
-                          }}
-                        />
-                        <Bar dataKey="value" name="Total Claim" fill="#8884d8" />
-                        <Bar dataKey="efficiency" name="Coverage Efficiency" fill="#82ca9d" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  ) : (
-                    <div className="flex items-center justify-center h-full text-gray-500">
-                      No insurance data available for comparison
-                    </div>
-                  )}
+                          return label;
+                        }}
+                        contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151', borderRadius: '0.5rem' }}
+                        labelStyle={{ color: '#F3F4F6' }}
+                      />
+                      <Legend />
+                      <Bar dataKey="baseCost" name="Base Cost" stackId="a" fill="#8884d8" />
+                      <Bar dataKey="additionalCosts" name="Additional Costs" stackId="a" fill="#82ca9d" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-gray-500">
+                    No cost data available for comparison
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Insurance Coverage Comparison */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg">Insurance Coverage Comparison</CardTitle>
+                  <p className="text-sm text-gray-400">Coverage vs. out-of-pocket across different insurers</p>
                 </div>
-                
-                {/* Coverage Percentage Table */}
-                <div className="mt-4 overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead className="bg-gray-800">
-                      <tr>
-                        <th className="py-2 px-3 text-left">Insurance Provider</th>
-                        <th className="py-2 px-3 text-right">Avg. Coverage</th>
-                        <th className="py-2 px-3 text-right">Avg. Out of Pocket</th>
-                        <th className="py-2 px-3 text-right">Coverage %</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {tableData.reduce((result: { name: string; count: number; totalClaim: number; payerCoverage: number; outOfPocket: number; }[], item) => {
+                <InsuranceInsightsDialog 
+                  insuranceData={tableData.reduce((result: { name: string; count: number; totalClaim: number; payerCoverage: number; outOfPocket: number; }[], item) => {
+                    const existingPayer = result.find(p => p.name === item.payer);
+                    if (existingPayer) {
+                      existingPayer.count += 1;
+                      existingPayer.totalClaim += item.totalClaim;
+                      existingPayer.payerCoverage += item.payerCoverage;
+                      existingPayer.outOfPocket += item.outOfPocket;
+                    } else {
+                      result.push({
+                        name: item.payer,
+                        count: 1,
+                        totalClaim: item.totalClaim,
+                        payerCoverage: item.payerCoverage,
+                        outOfPocket: item.outOfPocket
+                      });
+                    }
+                    return result;
+                  }, []).map(item => ({
+                    name: item.name,
+                    totalValue: item.totalClaim,
+                    avgValue: item.totalClaim / item.count,
+                    avgCoverage: (item.payerCoverage / item.totalClaim) * 100,
+                    count: item.count
+                  }))}
+                />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[400px] w-full">
+                {tableData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={tableData.reduce((result: { name: string; count: number; totalClaim: number; payerCoverage: number; outOfPocket: number; }[], item: { payer: string; totalClaim: number; payerCoverage: number; outOfPocket: number; }) => {
                         // Check if this payer is already in the result
                         const existingPayer = result.find(p => p.name === item.payer);
                         
@@ -1059,171 +1001,246 @@ export default function DashboardPage() {
                           });
                         }
                         return result;
-                      }, []).map((item, index) => {
-                        // Calculate averages
-                        const avgPayerCoverage = item.payerCoverage / item.count;
-                        const avgOutOfPocket = item.outOfPocket / item.count;
-                        const avgTotalClaim = item.totalClaim / item.count;
-                        const coveragePercent = Math.round((avgPayerCoverage / avgTotalClaim) * 100);
-                        
-                        return (
-                          <tr key={index} className="border-t border-gray-700">
-                            <td className="py-2 px-3">{item.name}</td>
-                            <td className="py-2 px-3 text-right">${avgPayerCoverage.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                            <td className="py-2 px-3 text-right">${avgOutOfPocket.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                            <td className="py-2 px-3 text-right">
-                              <div className="flex items-center justify-end">
-                                <div className="w-24 bg-gray-700 h-2 rounded-full mr-2">
-                                  <div 
-                                    className="bg-blue-500 h-2 rounded-full" 
-                                    style={{ width: `${coveragePercent}%` }}
-                                  ></div>
-                                </div>
-                                {coveragePercent}%
+                      }, []).map(item => ({
+                        ...item,
+                        value: item.totalClaim,
+                        avgValue: item.totalClaim / item.count,
+                        efficiency: (item.payerCoverage / item.totalClaim) * 100
+                      })).sort((a, b) => b.value - a.value)}
+                      margin={{ top: 20, right: 30, left: 60, bottom: 60 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+                      <XAxis 
+                        dataKey="name" 
+                        tick={{ fill: '#888', fontSize: 12 }}
+                      />
+                      <YAxis 
+                        tickFormatter={(value) => `$${value}`}
+                        tick={{ fill: '#888' }}
+                      />
+                      <Tooltip 
+                        formatter={(value: number, name: string) => {
+                          if (name === 'value') return [`$${value.toLocaleString()}`, 'Total Claim'];
+                          if (name === 'efficiency') return [`${value.toFixed(1)}%`, 'Coverage Efficiency'];
+                          return [value, name];
+                        }}
+                        contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151', borderRadius: '0.5rem' }}
+                        labelStyle={{ color: '#F3F4F6' }}
+                      />
+                      <Legend 
+                        formatter={(value) => {
+                          return <span style={{ color: '#F3F4F6' }}>{value}</span>;
+                        }}
+                      />
+                      <Bar dataKey="value" name="Total Claim" fill="#8884d8" />
+                      <Bar dataKey="efficiency" name="Coverage Efficiency" fill="#82ca9d" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-gray-500">
+                    No insurance data available for comparison
+                  </div>
+                )}
+              </div>
+              
+              {/* Coverage Percentage Table */}
+              <div className="mt-4 overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-800">
+                    <tr>
+                      <th className="py-2 px-3 text-left">Insurance Provider</th>
+                      <th className="py-2 px-3 text-right">Avg. Coverage</th>
+                      <th className="py-2 px-3 text-right">Avg. Out of Pocket</th>
+                      <th className="py-2 px-3 text-right">Coverage %</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tableData.reduce((result: { name: string; count: number; totalClaim: number; payerCoverage: number; outOfPocket: number; }[], item) => {
+                      // Check if this payer is already in the result
+                      const existingPayer = result.find(p => p.name === item.payer);
+                      
+                      if (existingPayer) {
+                        // Update existing payer data
+                        existingPayer.count += 1;
+                        existingPayer.totalClaim += item.totalClaim;
+                        existingPayer.payerCoverage += item.payerCoverage;
+                        existingPayer.outOfPocket += item.outOfPocket;
+                      } else {
+                        // Add new payer data
+                        result.push({
+                          name: item.payer,
+                          count: 1,
+                          totalClaim: item.totalClaim,
+                          payerCoverage: item.payerCoverage,
+                          outOfPocket: item.outOfPocket
+                        });
+                      }
+                      return result;
+                    }, []).map((item, index) => {
+                      // Calculate averages
+                      const avgPayerCoverage = item.payerCoverage / item.count;
+                      const avgOutOfPocket = item.outOfPocket / item.count;
+                      const avgTotalClaim = item.totalClaim / item.count;
+                      const coveragePercent = Math.round((avgPayerCoverage / avgTotalClaim) * 100);
+                      
+                      return (
+                        <tr key={index} className="border-t border-gray-700">
+                          <td className="py-2 px-3">{item.name}</td>
+                          <td className="py-2 px-3 text-right">${avgPayerCoverage.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                          <td className="py-2 px-3 text-right">${avgOutOfPocket.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                          <td className="py-2 px-3 text-right">
+                            <div className="flex items-center justify-end">
+                              <div className="w-24 bg-gray-700 h-2 rounded-full mr-2">
+                                <div 
+                                  className="bg-blue-500 h-2 rounded-full" 
+                                  style={{ width: `${coveragePercent}%` }}
+                                ></div>
                               </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
+                              {coveragePercent}%
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
 
-            {/* Coverage Effectiveness Heat Map */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Coverage Effectiveness by Encounter Class</CardTitle>
-                <p className="text-sm text-gray-400">Heat map of coverage percentages by payer and encounter class</p>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[400px] w-full">
-                  {tableData.length > 0 ? (
-                    <div className="overflow-x-auto max-h-[400px]">
-                      <table className="min-w-full text-sm border-separate border-spacing-0">
-                        <thead className="bg-gray-800 sticky top-0 z-10">
-                          <tr>
-                            <th className="py-2 px-3 text-left whitespace-nowrap">Payer</th>
-                            <th className="py-2 px-3 text-center whitespace-nowrap">Emergency</th>
-                            <th className="py-2 px-3 text-center whitespace-nowrap">Inpatient</th>
-                            <th className="py-2 px-3 text-center whitespace-nowrap">Ambulatory</th>
-                            <th className="py-2 px-3 text-center whitespace-nowrap">Wellness</th>
-                            <th className="py-2 px-3 text-center whitespace-nowrap">Urgent Care</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {tableData
-                            .reduce((result: { name: string; emergency: number; inpatient: number; ambulatory: number; wellness: number; urgentCare: number; }[], item) => {
-                              // Check if this payer is already in the result
-                              const existingPayer = result.find(p => p.name === item.payer);
-                              
-                              if (existingPayer) {
-                                return result;
-                              } else {
-                                // Generate payer data with randomized encounter class coverages
-                                // In a real implementation, this would come from API data
-                                return [...result, {
-                                  name: item.payer,
-                                  emergency: Math.round(50 + Math.random() * 40), // 50-90% coverage
-                                  inpatient: Math.round(60 + Math.random() * 35), // 60-95% coverage
-                                  ambulatory: Math.round(70 + Math.random() * 25), // 70-95% coverage
-                                  wellness: Math.round(40 + Math.random() * 50), // 40-90% coverage
-                                  urgentCare: Math.round(55 + Math.random() * 35), // 55-90% coverage
-                                }];
-                              }
-                            }, [])
-                            .sort((a, b) => a.name.localeCompare(b.name))
-                            .map((payer, index) => (
-                              <tr key={index} className="border-t border-gray-700">
-                                <td className="py-2 px-3 font-medium whitespace-nowrap">{payer.name}</td>
-                                <td className="py-2 px-3">
-                                  <div className="flex items-center justify-center">
-                                    <div 
-                                      className="w-12 h-12 flex items-center justify-center rounded-md text-white text-sm"
-                                      style={{ 
-                                        backgroundColor: `hsl(${payer.emergency - 50}, 80%, 40%)`,
-                                      }}
-                                    >
-                                      {payer.emergency}%
-                                    </div>
+          {/* Coverage Effectiveness Heat Map */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Coverage Effectiveness by Encounter Class</CardTitle>
+              <p className="text-sm text-gray-400">Heat map of coverage percentages by payer and encounter class</p>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[400px] w-full">
+                {tableData.length > 0 ? (
+                  <div className="overflow-x-auto max-h-[400px]">
+                    <table className="min-w-full text-sm border-separate border-spacing-0">
+                      <thead className="bg-gray-800 sticky top-0 z-10">
+                        <tr>
+                          <th className="py-2 px-3 text-left whitespace-nowrap">Payer</th>
+                          <th className="py-2 px-3 text-center whitespace-nowrap">Emergency</th>
+                          <th className="py-2 px-3 text-center whitespace-nowrap">Inpatient</th>
+                          <th className="py-2 px-3 text-center whitespace-nowrap">Ambulatory</th>
+                          <th className="py-2 px-3 text-center whitespace-nowrap">Wellness</th>
+                          <th className="py-2 px-3 text-center whitespace-nowrap">Urgent Care</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {tableData
+                          .reduce((result: { name: string; emergency: number; inpatient: number; ambulatory: number; wellness: number; urgentCare: number; }[], item) => {
+                            // Check if this payer is already in the result
+                            const existingPayer = result.find(p => p.name === item.payer);
+                            
+                            if (existingPayer) {
+                              return result;
+                            } else {
+                              // Generate payer data with randomized encounter class coverages
+                              // In a real implementation, this would come from API data
+                              return [...result, {
+                                name: item.payer,
+                                emergency: Math.round(50 + Math.random() * 40), // 50-90% coverage
+                                inpatient: Math.round(60 + Math.random() * 35), // 60-95% coverage
+                                ambulatory: Math.round(70 + Math.random() * 25), // 70-95% coverage
+                                wellness: Math.round(40 + Math.random() * 50), // 40-90% coverage
+                                urgentCare: Math.round(55 + Math.random() * 35), // 55-90% coverage
+                              }];
+                            }
+                          }, [])
+                          .sort((a, b) => a.name.localeCompare(b.name))
+                          .map((payer, index) => (
+                            <tr key={index} className="border-t border-gray-700">
+                              <td className="py-2 px-3 font-medium whitespace-nowrap">{payer.name}</td>
+                              <td className="py-2 px-3">
+                                <div className="flex items-center justify-center">
+                                  <div 
+                                    className="w-12 h-12 flex items-center justify-center rounded-md text-white text-sm"
+                                    style={{ 
+                                      backgroundColor: `hsl(${payer.emergency - 50}, 80%, 40%)`,
+                                    }}
+                                  >
+                                    {payer.emergency}%
                                   </div>
-                                </td>
-                                <td className="py-2 px-3">
-                                  <div className="flex items-center justify-center">
-                                    <div 
-                                      className="w-12 h-12 flex items-center justify-center rounded-md text-white text-sm"
-                                      style={{ 
-                                        backgroundColor: `hsl(${payer.inpatient - 50}, 80%, 40%)`,
-                                      }}
-                                    >
-                                      {payer.inpatient}%
-                                    </div>
+                                </div>
+                              </td>
+                              <td className="py-2 px-3">
+                                <div className="flex items-center justify-center">
+                                  <div 
+                                    className="w-12 h-12 flex items-center justify-center rounded-md text-white text-sm"
+                                    style={{ 
+                                      backgroundColor: `hsl(${payer.inpatient - 50}, 80%, 40%)`,
+                                    }}
+                                  >
+                                    {payer.inpatient}%
                                   </div>
-                                </td>
-                                <td className="py-2 px-3">
-                                  <div className="flex items-center justify-center">
-                                    <div 
-                                      className="w-12 h-12 flex items-center justify-center rounded-md text-white text-sm"
-                                      style={{ 
-                                        backgroundColor: `hsl(${payer.ambulatory - 50}, 80%, 40%)`,
-                                      }}
-                                    >
-                                      {payer.ambulatory}%
-                                    </div>
+                                </div>
+                              </td>
+                              <td className="py-2 px-3">
+                                <div className="flex items-center justify-center">
+                                  <div 
+                                    className="w-12 h-12 flex items-center justify-center rounded-md text-white text-sm"
+                                    style={{ 
+                                      backgroundColor: `hsl(${payer.ambulatory - 50}, 80%, 40%)`,
+                                    }}
+                                  >
+                                    {payer.ambulatory}%
                                   </div>
-                                </td>
-                                <td className="py-2 px-3">
-                                  <div className="flex items-center justify-center">
-                                    <div 
-                                      className="w-12 h-12 flex items-center justify-center rounded-md text-white text-sm"
-                                      style={{ 
-                                        backgroundColor: `hsl(${payer.wellness - 50}, 80%, 40%)`,
-                                      }}
-                                    >
-                                      {payer.wellness}%
-                                    </div>
+                                </div>
+                              </td>
+                              <td className="py-2 px-3">
+                                <div className="flex items-center justify-center">
+                                  <div 
+                                    className="w-12 h-12 flex items-center justify-center rounded-md text-white text-sm"
+                                    style={{ 
+                                      backgroundColor: `hsl(${payer.wellness - 50}, 80%, 40%)`,
+                                    }}
+                                  >
+                                    {payer.wellness}%
                                   </div>
-                                </td>
-                                <td className="py-2 px-3">
-                                  <div className="flex items-center justify-center">
-                                    <div 
-                                      className="w-12 h-12 flex items-center justify-center rounded-md text-white text-sm"
-                                      style={{ 
-                                        backgroundColor: `hsl(${payer.urgentCare - 50}, 80%, 40%)`,
-                                      }}
-                                    >
-                                      {payer.urgentCare}%
-                                    </div>
+                                </div>
+                              </td>
+                              <td className="py-2 px-3">
+                                <div className="flex items-center justify-center">
+                                  <div 
+                                    className="w-12 h-12 flex items-center justify-center rounded-md text-white text-sm"
+                                    style={{ 
+                                      backgroundColor: `hsl(${payer.urgentCare - 50}, 80%, 40%)`,
+                                    }}
+                                  >
+                                    {payer.urgentCare}%
                                   </div>
-                                </td>
-                              </tr>
-                            ))
-                          }
-                        </tbody>
-                      </table>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-center h-full text-gray-500">
-                      No data available for coverage effectiveness analysis
-                    </div>
-                  )}
-                </div>
-                
-                {/* Legend */}
-                <div className="mt-4">
-                  <p className="text-sm text-gray-400 mb-2">Coverage Percentage Legend</p>
-                  <div className="flex items-center">
-                    <div className="flex-1 h-4 bg-gradient-to-r from-red-600 via-yellow-500 to-green-500 rounded"></div>
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        }
+                      </tbody>
+                    </table>
                   </div>
-                  <div className="flex justify-between text-xs text-gray-400 mt-1">
-                    <span>50%</span>
-                    <span>75%</span>
-                    <span>100%</span>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-gray-500">
+                    No data available for coverage effectiveness analysis
                   </div>
+                )}
+              </div>
+              
+              {/* Legend */}
+              <div className="mt-4">
+                <p className="text-sm text-gray-400 mb-2">Coverage Percentage Legend</p>
+                <div className="flex items-center">
+                  <div className="flex-1 h-4 bg-gradient-to-r from-red-600 via-yellow-500 to-green-500 rounded"></div>
                 </div>
-              </CardContent>
-            </Card>
+                <div className="flex justify-between text-xs text-gray-400 mt-1">
+                  <span>50%</span>
+                  <span>75%</span>
+                  <span>100%</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="procedures" className="space-y-4">
